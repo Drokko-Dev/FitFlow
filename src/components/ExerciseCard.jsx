@@ -1,7 +1,6 @@
-// Placeholder — logic pending
 export default function ExerciseCard({ exercise }) {
   return (
-    <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', marginBottom: '8px', fontFamily: 'var(--font-body)', color: 'var(--text-primary)' }}>
+    <div className="px-4 py-4 rounded-2xl bg-card border border-border mb-2 font-body text-[#f0eeff]">
       {exercise?.icon} {exercise?.name}
     </div>
   )

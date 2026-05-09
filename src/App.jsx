@@ -9,8 +9,8 @@ export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
-        <div className="app-shell">
-          <main className="page-content">
+        <div className="w-full max-w-[480px] min-h-full bg-bg relative flex flex-col">
+          <main className="flex-1 overflow-y-auto pb-[68px] no-scrollbar">
             <Routes>
               <Route path="/" element={<Navigate to="/home" replace />} />
               <Route path="/home" element={<Home />} />

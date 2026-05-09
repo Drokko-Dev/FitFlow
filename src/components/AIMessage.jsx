@@ -1,5 +1,4 @@
 import { useApp } from '../store/AppContext'
-import './AIMessage.css'
 
 const MUSCLE_LABELS = {
   pecho: 'pecho',
@@ -41,11 +40,14 @@ export default function AIMessage() {
   const message = buildMessage(muscleScores)
 
   return (
-    <div className="ai-card">
-      <div className="ai-top-bar" />
-      <div className="ai-inner">
-        <span className="ai-badge">FITFLOW AI</span>
-        <p className="ai-text">{message}</p>
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div className="h-[3px] bg-gradient-to-r from-accent via-accent2 to-pink-500" />
+      <div className="px-4 pt-[14px] pb-4">
+        <span className="inline-flex items-center gap-[5px] text-[10px] font-bold tracking-[0.1em] text-[#a898ff] bg-accent/15 px-[10px] py-[3px] rounded-full mb-[10px]">
+          <span className="w-[5px] h-[5px] rounded-full bg-[#a898ff] animate-pulse-dot" />
+          FITFLOW AI
+        </span>
+        <p className="text-[15px] leading-[1.55] text-[#f0eeff]">{message}</p>
       </div>
     </div>
   )

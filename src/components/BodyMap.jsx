@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import Body from 'react-muscle-highlighter'
 import { useApp } from '../store/AppContext'
-import './BodyMap.css'
 
 const BODY_SCALE  = 0.9
-const CARD_HEIGHT = 420  // 400*0.9 bodies + 60px padding headroom
+const CARD_HEIGHT = 420
 
 function getColor(score) {
   if (score >= 60) return '#22d3a0'
@@ -40,10 +39,16 @@ const MUSCLE_LIST = [
   { key: 'core',    label: 'Core/Abs' },
 ]
 
+const LEGEND = [
+  { color: '#22d3a0', label: 'Verde = Bien (≥60%)' },
+  { color: '#f59e0b', label: 'Amarillo = Poco (≥35%)' },
+  { color: '#ef4444', label: 'Rojo = Sin trabajo' },
+]
+
 export default function BodyMap() {
   const { muscleScores } = useApp()
-  const [isFlipped, setIsFlipped]       = useState(false)
-  const [animateBars, setAnimateBars]   = useState(false)
+  const [isFlipped, setIsFlipped]     = useState(false)
+  const [animateBars, setAnimateBars] = useState(false)
 
   useEffect(() => {
     if (isFlipped) {
@@ -64,87 +69,82 @@ export default function BodyMap() {
     color: getColor(muscleScores[m.key] ?? 0),
   }))
 
-  const toggle = () => setIsFlipped(v => !v)
+  const toggle    = () => setIsFlipped(v => !v)
   const btnToggle = e => { e.stopPropagation(); toggle() }
 
   return (
-    <div className="bodymap-wrap">
-      {/* ── Flip card ── */}
+    <div className="flex flex-col gap-3">
+      {/* Flip card scene */}
       <div
-        className="card-scene"
+        className="[perspective:1200px] cursor-pointer"
         style={{ height: CARD_HEIGHT }}
         onClick={toggle}
       >
-        <div className={`card-body${isFlipped ? ' is-flipped' : ''}`}>
-
-          {/* ── FRONT: both bodies ── */}
-          <div className="card-face card-face--front">
-            <div className="front-bodies">
-              <Body
-                data={bodyData}
-                side="front"
-                gender="male"
-                scale={BODY_SCALE}
-                defaultFill="#1e1e2e"
-                border="#2a2a40"
-              />
-              <Body
-                data={bodyData}
-                side="back"
-                gender="male"
-                scale={BODY_SCALE}
-                defaultFill="#1e1e2e"
-                border="#2a2a40"
-              />
+        <div
+          className={`w-full h-full relative [transform-style:preserve-3d] transition-[transform] duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
+        >
+          {/* FRONT face */}
+          <div className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] rounded-[20px] bg-card border border-border overflow-hidden flex items-center justify-center">
+            <div className="flex gap-2 items-center justify-center">
+              <Body data={bodyData} side="front" gender="male" scale={BODY_SCALE} defaultFill="#1e1e2e" border="#2a2a40" />
+              <Body data={bodyData} side="back"  gender="male" scale={BODY_SCALE} defaultFill="#1e1e2e" border="#2a2a40" />
             </div>
-            <button className="flip-btn" onClick={btnToggle} aria-label="Ver progreso muscular">↻</button>
+            <button
+              className="absolute bottom-4 right-4 w-9 h-9 rounded-full bg-accent/15 border border-accent/40 text-accent text-lg flex items-center justify-center transition-[background,transform] hover:bg-accent/30 active:scale-[0.88] select-none"
+              onClick={btnToggle}
+              aria-label="Ver progreso muscular"
+            >
+              ↻
+            </button>
           </div>
 
-          {/* ── BACK: muscle progress ── */}
-          <div className="card-face card-face--back">
-            <h3 className="back-title">Progreso muscular</h3>
+          {/* BACK face */}
+          <div className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)] rounded-[20px] bg-card border border-border overflow-hidden px-5 py-6 flex flex-col justify-center">
+            <h3 className="font-display text-lg font-bold text-[#f0eeff] mb-[22px]">Progreso muscular</h3>
 
-            <div className="muscle-bars-list">
+            <div className="flex flex-col gap-[14px] pb-[52px]">
               {muscles.map(m => (
-                <div key={m.key} className="mb-row">
-                  <span className="mb-dot" style={{ background: m.color }} />
-                  <span className="mb-name">{m.label}</span>
-                  <div className="mb-track">
+                <div key={m.key} className="flex items-center gap-[10px]">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: m.color }} />
+                  <span className="w-16 text-[13px] text-[#8b87a8] shrink-0">{m.label}</span>
+                  <div className="flex-1 h-[6px] bg-white/[0.07] rounded-[3px] overflow-hidden">
                     <div
-                      className="bar-fill"
+                      className="h-[6px] rounded-[3px] transition-[width] duration-[800ms] ease-in"
                       style={{
                         width:      animateBars ? `${m.score}%` : '0%',
                         background: m.color,
                       }}
                     />
                   </div>
-                  <span className="mb-pct" style={{ color: m.color }}>
+                  <span
+                    className="w-8 text-right text-[12px] font-semibold font-display shrink-0"
+                    style={{ color: m.color }}
+                  >
                     {m.score}%
                   </span>
                 </div>
               ))}
             </div>
 
-            <button className="flip-btn" onClick={btnToggle} aria-label="Ver cuerpo">↻</button>
+            <button
+              className="absolute bottom-4 right-4 w-9 h-9 rounded-full bg-accent/15 border border-accent/40 text-accent text-lg flex items-center justify-center transition-[background,transform] hover:bg-accent/30 active:scale-[0.88] select-none"
+              onClick={btnToggle}
+              aria-label="Ver cuerpo"
+            >
+              ↻
+            </button>
           </div>
-
         </div>
       </div>
 
-      {/* ── Legend (outside the flip) ── */}
-      <div className="bodymap-legend">
-        <span className="bm-legend-item">
-          <span className="bm-dot" style={{ background: '#22d3a0' }} />
-          Verde = Bien (≥60%)
-        </span>
-        <span className="bm-legend-item">
-          <span className="bm-dot" style={{ background: '#f59e0b' }} />
-          Amarillo = Poco (≥35%)
-        </span>
-        <span className="bm-legend-item">
-          <span className="bm-dot" style={{ background: '#ef4444' }} />
-          Rojo = Sin trabajo
-        </span>
+      {/* Legend */}
+      <div className="flex justify-center flex-wrap gap-3">
+        {LEGEND.map(({ color, label }) => (
+          <span key={label} className="flex items-center gap-[5px] text-[11px] text-[#8b87a8]">
+            <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: color }} />
+            {label}
+          </span>
+        ))}
       </div>
     </div>
   )
