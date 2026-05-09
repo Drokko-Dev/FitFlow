@@ -1,19 +1,25 @@
-import { exercises } from '../data/exercises'
-import ExerciseCard from '../components/ExerciseCard'
+import { useState } from 'react'
+import PlanList    from './exercises/PlanList'
+import WorkoutMode from './exercises/WorkoutMode'
+import PlanEditor  from './exercises/PlanEditor'
 
 export default function Exercises() {
-  return (
-    <div className="pb-4">
-      <header className="px-5 pt-[52px] pb-5">
-        <h1 className="font-display text-[28px] font-extrabold text-[#f0eeff] mb-1">Ejercicios</h1>
-        <p className="text-[13px] text-[#8b87a8]">{exercises.length} movimientos disponibles</p>
-      </header>
+  const [view,   setView]   = useState('list')
+  const [planId, setPlanId] = useState(null)
 
-      <div className="px-5">
-        {exercises.map(ex => (
-          <ExerciseCard key={ex.id} exercise={ex} />
-        ))}
-      </div>
-    </div>
+  if (view === 'workout') {
+    return <WorkoutMode key={planId} planId={planId} onClose={() => setView('list')} />
+  }
+
+  if (view === 'editor') {
+    return <PlanEditor planId={planId} onClose={() => setView('list')} />
+  }
+
+  return (
+    <PlanList
+      onWorkout={id => { setPlanId(id);   setView('workout') }}
+      onEdit={id    => { setPlanId(id);   setView('editor')  }}
+      onCreate={()  => { setPlanId(null); setView('editor')  }}
+    />
   )
 }
