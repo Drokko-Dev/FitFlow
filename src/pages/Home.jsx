@@ -3,7 +3,6 @@ import { useApp } from '../store/AppContext'
 import AIMessage from '../components/AIMessage'
 import WeekStats from '../components/WeekStats'
 import BodyMap from '../components/BodyMap'
-import './Home.css'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -17,34 +16,34 @@ export default function Home() {
   const navigate = useNavigate()
 
   return (
-    <div className="home-page">
-      <header className="home-header">
-        <div className="home-greeting">
+    <div className="pb-20">
+      <header className="px-5 pt-[52px] pb-6 bg-gradient-to-b from-accent/[0.09] to-transparent">
+        <div className="flex items-center gap-[14px]">
           <button
-            className="home-avatar"
+            className="w-[52px] h-[52px] rounded-full bg-card border border-border text-[26px] flex items-center justify-center shrink-0 transition-[transform,border-color] duration-150 active:scale-[0.92] active:border-accent"
             onClick={() => navigate('/profile')}
             aria-label="Ver perfil"
           >
             {userEmoji}
           </button>
           <div>
-            <p className="home-saludo">{getGreeting()},</p>
-            <h1 className="home-name">{userName}</h1>
+            <p className="text-[13px] text-[#8b87a8] mb-0.5">{getGreeting()},</p>
+            <h1 className="font-display text-[26px] font-bold text-[#f0eeff] leading-[1.1]">{userName}</h1>
           </div>
         </div>
       </header>
 
-      <section className="home-section">
+      <section className="px-5 mb-5">
         <AIMessage />
       </section>
 
-      <section className="home-section">
-        <h2 className="section-title">Esta Semana</h2>
+      <section className="px-5 mb-5">
+        <h2 className="font-display text-[12px] font-semibold text-muted uppercase tracking-[0.1em] mb-[10px]">Esta Semana</h2>
         <WeekStats />
       </section>
 
-      <section className="home-section">
-        <h2 className="section-title">Mapa Muscular</h2>
+      <section className="px-5 mb-5">
+        <h2 className="font-display text-[12px] font-semibold text-muted uppercase tracking-[0.1em] mb-[10px]">Mapa Muscular</h2>
         <BodyMap />
       </section>
     </div>
