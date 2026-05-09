@@ -1,94 +1,36 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-:root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111118;
-  --bg-card: #16161f;
-  --bg-card-hover: #1c1c28;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  --accent: #7c6aff;
-  --accent-light: #a898ff;
-  --accent-dim: rgba(124, 106, 255, 0.15);
-
-  --text-primary: #f0eeff;
-  --text-secondary: #8b87a8;
-  --text-muted: #4a4766;
-
-  --green: #4ade80;
-  --yellow: #facc15;
-  --red: #f87171;
-
-  --border: rgba(124, 106, 255, 0.12);
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-
-  --font-title: 'Syne', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
-
-  --nav-height: 68px;
+@layer base {
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+  }
+  body {
+    @apply bg-bg font-body text-[#f0eeff] antialiased overflow-x-hidden;
+  }
+  #root {
+    @apply flex justify-center bg-[#06060a];
+  }
+  h1, h2, h3 {
+    @apply font-display;
+  }
+  button {
+    @apply cursor-pointer border-0 bg-transparent font-body;
+  }
+  a {
+    @apply no-underline text-inherit;
+  }
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body, #root {
-  height: 100%;
-  width: 100%;
-}
-
-body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-
-#root {
-  display: flex;
-  justify-content: center;
-  background: #06060a;
-}
-
-.app-shell {
-  width: 100%;
-  max-width: 480px;
-  min-height: 100%;
-  background: var(--bg-primary);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-content {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: var(--nav-height);
-  scrollbar-width: none;
-}
-
-.page-content::-webkit-scrollbar {
-  display: none;
-}
-
-h1, h2, h3 {
-  font-family: var(--font-title);
-}
-
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: var(--font-body);
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
