@@ -55,7 +55,8 @@ export default function BodyMap() {
       const t = setTimeout(() => setAnimateBars(true), 100)
       return () => clearTimeout(t)
     }
-    setAnimateBars(false)
+    const t = setTimeout(() => setAnimateBars(false), 0)
+    return () => clearTimeout(t)
   }, [isFlipped])
 
   const bodyData = BODY_DATA_BASE.map(({ slug, key }) => ({
