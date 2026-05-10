@@ -12,7 +12,7 @@ export default function PlanList({ onWorkout, onEdit, onCreate }) {
   const { plans } = useApp();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] pb-20">
+    <div className="min-h-screen bg-[var(--color-bg)] pb-20">
       <header className="px-5 pt-[52px] pb-5 flex items-center justify-between bg-gradient-to-b from-accent/[0.09] to-transparent">
         <h1 className="font-display text-[28px] font-extrabold text-[#f0eeff]">
           Mis Planes

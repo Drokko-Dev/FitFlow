@@ -15,6 +15,11 @@
   --border: 42 42 64;
   --muted:  #8888aa;
   --fg:     #f0eeff;
+  /* aliases usados con bg-[var(--color-*)] */
+  --color-bg:     #0a0a0f;
+  --color-card:   #1e1e2e;
+  --color-border: #2a2a40;
+  --color-muted:  #8888aa;
 }
 
 /* ── Light theme override ── */
@@ -27,6 +32,10 @@
   --border: 200 200 224;
   --muted:  #666680;
   --fg:     #0a0a0f;
+  --color-bg:     #f8f8ff;
+  --color-card:   #ffffff;
+  --color-border: #c8c8dc;
+  --color-muted:  #666680;
 }
 
 @layer base {

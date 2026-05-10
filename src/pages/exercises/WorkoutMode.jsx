@@ -145,7 +145,7 @@ export default function WorkoutMode({ planId, onClose }) {
       </div>
 
       {showComplete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0f]/90 backdrop-blur-sm px-5 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-5 animate-fade-in">
           <div className="w-full max-w-[360px] bg-card rounded-[28px] border border-border p-8 flex flex-col items-center gap-5 animate-slide-up">
             <div className="text-[72px] leading-none">🏆</div>
             <div className="text-center">

@@ -97,10 +97,19 @@ export default function Profile() {
   function toggleDarkMode(val) {
     setDarkMode(val)
     localStorage.setItem('fitflow-dark-mode', String(val))
+    const html = document.documentElement
     if (val) {
-      document.documentElement.removeAttribute('data-theme')
+      html.removeAttribute('data-theme')
+      html.style.setProperty('--color-bg',     '#0a0a0f')
+      html.style.setProperty('--color-card',   '#1e1e2e')
+      html.style.setProperty('--color-border', '#2a2a40')
+      html.style.setProperty('--color-muted',  '#8888aa')
     } else {
-      document.documentElement.setAttribute('data-theme', 'light')
+      html.setAttribute('data-theme', 'light')
+      html.style.setProperty('--color-bg',     '#f8f8ff')
+      html.style.setProperty('--color-card',   '#ffffff')
+      html.style.setProperty('--color-border', '#c8c8dc')
+      html.style.setProperty('--color-muted',  '#666680')
     }
   }
 
@@ -257,7 +266,7 @@ export default function Profile() {
       {/* Emoji picker modal */}
       {showEmojiPicker && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[#0a0a0f]/80 backdrop-blur-sm px-4 pb-[88px] animate-fade-in"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm px-4 pb-[88px] animate-fade-in"
           onClick={() => setShowEmojiPicker(false)}
         >
           <div
