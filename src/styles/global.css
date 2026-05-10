@@ -4,8 +4,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Dark theme (default) ── */
 :root {
   --accent: 124 106 255;
+  --bg:     #0a0a0f;
+  --bg2:    #12121a;
+  --bg3:    #1a1a26;
+  --card:   #1e1e2e;
+  --card2:  #252538;
+  --border: 42 42 64;
+  --muted:  #8888aa;
+  --fg:     #f0eeff;
+}
+
+/* ── Light theme override ── */
+[data-theme="light"] {
+  --bg:     #f8f8ff;
+  --bg2:    #f0f0f8;
+  --bg3:    #e8e8f4;
+  --card:   #ffffff;
+  --card2:  #f0f0ff;
+  --border: 200 200 224;
+  --muted:  #666680;
+  --fg:     #0a0a0f;
 }
 
 @layer base {
@@ -14,7 +35,8 @@
     width: 100%;
   }
   body {
-    @apply bg-bg font-body text-[#f0eeff] antialiased overflow-x-hidden;
+    @apply bg-bg font-body antialiased overflow-x-hidden;
+    color: var(--fg);
   }
   #root {
     @apply flex justify-center bg-bg;
@@ -37,4 +59,9 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Hardcoded text colors → follow theme in light mode */
+html[data-theme="light"] .text-\[\#f0eeff\] {
+  color: var(--fg);
 }

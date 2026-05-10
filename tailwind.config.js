@@ -4,18 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg:      '#0a0a0f',
-        bg2:     '#12121a',
-        bg3:     '#1a1a26',
-        card:    '#1e1e2e',
-        card2:   '#252538',
-        border:  '#2a2a40',
+        bg:      'var(--bg)',
+        bg2:     'var(--bg2)',
+        bg3:     'var(--bg3)',
+        card:    'var(--card)',
+        card2:   'var(--card2)',
+        border:  'rgb(var(--border) / <alpha-value>)',
         accent:  'rgb(var(--accent) / <alpha-value>)',
         accent2: '#a855f7',
         green:   '#22d3a0',
         yellow:  '#f59e0b',
         red:     '#ef4444',
-        muted:   '#8888aa',
+        muted:   'var(--muted)',
       },
       fontFamily: {
         display: ['Syne', 'sans-serif'],
