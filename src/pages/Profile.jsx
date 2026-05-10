@@ -37,11 +37,11 @@ function Toggle({ on, onChange }) {
   return (
     <button
       onClick={() => onChange(!on)}
-      className={`w-11 h-6 rounded-full relative transition-colors duration-200 ${on ? 'bg-accent' : 'bg-white/[0.12]'}`}
+      className={`w-11 h-6 rounded-full relative transition-colors duration-200 ${on ? 'bg-accent' : 'bg-white/[0.15]'}`}
     >
       <span
-        className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-transform duration-200 ${
-          on ? 'translate-x-[22px]' : 'translate-x-[3px]'
+        className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all duration-200 ${
+          on ? 'left-[23px]' : 'left-[3px]'
         }`}
       />
     </button>
@@ -60,9 +60,12 @@ function SettingRow({ label, children, border = true }) {
 export default function Profile() {
   const { userName, userEmoji, weekHistory, preferences, accentColor, goals, updateState } = useApp()
 
-  const [editingName, setEditingName]     = useState(false)
-  const [nameInput, setNameInput]         = useState(userName)
+  const [editingName, setEditingName]         = useState(false)
+  const [nameInput, setNameInput]             = useState(userName)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [darkMode, setDarkMode]               = useState(
+    () => localStorage.getItem('fitflow-dark-mode') !== 'false'
+  )
 
   const totalSessions = weekHistory.length
   const streak        = calcStreak(weekHistory)
@@ -91,8 +94,18 @@ export default function Profile() {
     updateState({ accentColor: hex })
   }
 
+  function toggleDarkMode(val) {
+    setDarkMode(val)
+    localStorage.setItem('fitflow-dark-mode', String(val))
+    if (val) {
+      document.documentElement.removeAttribute('data-theme')
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f] pb-20">
+    <div className="min-h-screen bg-bg pb-20">
 
       {/* Header */}
       <header className="px-5 pt-[52px] pb-8 flex flex-col items-center gap-3 bg-gradient-to-b from-accent/[0.1] to-transparent">
@@ -171,7 +184,7 @@ export default function Profile() {
         <h2 className="font-display text-[11px] font-semibold text-muted uppercase tracking-[0.1em] mb-1">Preferencias</h2>
         <div className="bg-card rounded-2xl border border-border px-4">
           <SettingRow label="Modo oscuro">
-            <Toggle on={true} onChange={() => {}} />
+            <Toggle on={darkMode} onChange={toggleDarkMode} />
           </SettingRow>
           <SettingRow label="Recordatorios">
             <Toggle
@@ -189,7 +202,7 @@ export default function Profile() {
                   style={{
                     backgroundColor: color,
                     boxShadow: currentAccent === color
-                      ? '0 0 0 2px #0a0a0f, 0 0 0 4px white'
+                      ? '0 0 0 2px var(--bg), 0 0 0 4px white'
                       : 'none',
                   }}
                 />
