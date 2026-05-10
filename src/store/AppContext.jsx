@@ -3,7 +3,7 @@ import { exercises } from '../data/exercises'
 
 const AppContext = createContext(null)
 
-const DATA_VERSION = 3
+const DATA_VERSION = 4
 
 function applyAccent(hex) {
   const r = parseInt(hex.slice(1, 3), 16)
@@ -57,6 +57,30 @@ const defaultState = {
   accentColor: '#7c6aff',
   preferences: { reminders: false },
   goals: { daysPerWeek: 4, goal: 'Ganar músculo' },
+  userStats: { peso: null, estatura: null, edad: null, genero: 'Masculino' },
+  prs: [
+    {
+      id: 1,
+      exerciseName: 'Sentadilla',
+      history: [
+        { date: '2026-03-01', weight: 60 },
+        { date: '2026-03-15', weight: 65 },
+        { date: '2026-04-01', weight: 70 },
+        { date: '2026-04-20', weight: 75 },
+        { date: '2026-05-05', weight: 80 },
+      ],
+    },
+    {
+      id: 2,
+      exerciseName: 'Press Banca',
+      history: [
+        { date: '2026-03-01', weight: 50 },
+        { date: '2026-03-20', weight: 55 },
+        { date: '2026-04-10', weight: 60 },
+        { date: '2026-05-01', weight: 65 },
+      ],
+    },
+  ],
 }
 
 function loadFromStorage() {
@@ -101,8 +125,20 @@ export function AppProvider({ children }) {
     setState(prev => ({ ...prev, plans: prev.plans.filter(p => p.id !== id) }))
   }
 
+  function addPR(exerciseName, firstEntry) {
+    const newPR = { id: Date.now(), exerciseName, history: firstEntry ? [firstEntry] : [] }
+    setState(prev => ({ ...prev, prs: [...prev.prs, newPR] }))
+  }
+
+  function addPREntry(prId, entry) {
+    setState(prev => ({
+      ...prev,
+      prs: prev.prs.map(pr => pr.id === prId ? { ...pr, history: [...pr.history, entry] } : pr),
+    }))
+  }
+
   return (
-    <AppContext.Provider value={{ ...state, updateState, addPlan, updatePlan, deletePlan }}>
+    <AppContext.Provider value={{ ...state, updateState, addPlan, updatePlan, deletePlan, addPR, addPREntry }}>
       {children}
     </AppContext.Provider>
   )
