@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { exercises } from '../data/exercises'
+import { supabase } from '../lib/supabase'
+import * as db from '../hooks/useSupabase'
 
 const AppContext = createContext(null)
 
@@ -12,75 +14,24 @@ function applyAccent(hex) {
   document.documentElement.style.setProperty('--accent', `${r} ${g} ${b}`)
 }
 
+// eslint-disable-next-line no-unused-vars
 function exEntry(id, sets, reps) {
   const ex = exercises.find(e => e.id === id)
   return { ...ex, sets, reps }
 }
 
 const defaultState = {
-  dataVersion: DATA_VERSION,
-  userName: 'Atleta',
-  userEmoji: '🔥',
-  plans: [
-    {
-      id: 'plan-default-1',
-      name: 'Plan Brazos',
-      exercises: [
-        exEntry(6,  3, 10),
-        exEntry(7,  3, 12),
-        exEntry(13, 2, 10),
-      ],
-    },
-    {
-      id: 'plan-default-2',
-      name: 'Plan Pierna',
-      exercises: [
-        exEntry(2,  4, 10),
-        exEntry(20, 3, 12),
-        exEntry(12, 3, 10),
-      ],
-    },
-  ],
-  muscleScores: {
-    pecho:    72,
-    espalda:  30,
-    brazos:   65,
-    hombros:  80,
-    pierna:   20,
-    core:     50,
-  },
-  weekHistory: [
-    { fecha: '2026-05-04', duracionMin: 45, calorias: 320 },
-    { fecha: '2026-05-05', duracionMin: 55, calorias: 410 },
-    { fecha: '2026-05-06', duracionMin: 38, calorias: 275 },
-  ],
-  accentColor: '#7c6aff',
-  preferences: { reminders: false },
-  goals: { daysPerWeek: 4, goal: 'Ganar músculo' },
-  userStats: { peso: null, estatura: null, edad: null, genero: 'Masculino' },
-  prs: [
-    {
-      id: 1,
-      exerciseName: 'Sentadilla',
-      history: [
-        { date: '2026-03-01', weight: 60 },
-        { date: '2026-03-15', weight: 65 },
-        { date: '2026-04-01', weight: 70 },
-        { date: '2026-04-20', weight: 75 },
-        { date: '2026-05-05', weight: 80 },
-      ],
-    },
-    {
-      id: 2,
-      exerciseName: 'Press Banca',
-      history: [
-        { date: '2026-03-01', weight: 50 },
-        { date: '2026-03-20', weight: 55 },
-        { date: '2026-04-10', weight: 60 },
-        { date: '2026-05-01', weight: 65 },
-      ],
-    },
-  ],
+  dataVersion:  DATA_VERSION,
+  userName:     'Atleta',
+  userEmoji:    '🔥',
+  plans:        [],
+  muscleScores: { pecho: 0, espalda: 0, brazos: 0, hombros: 0, pierna: 0, core: 0 },
+  weekHistory:  [],
+  accentColor:  '#7c6aff',
+  preferences:  { reminders: false },
+  goals:        { daysPerWeek: 4, goal: 'Ganar músculo' },
+  userStats:    { peso: null, estatura: null, edad: null, genero: 'Masculino' },
+  prs:          [],
 }
 
 function loadFromStorage() {
@@ -90,28 +41,128 @@ function loadFromStorage() {
     const parsed = JSON.parse(saved)
     if (parsed.dataVersion !== DATA_VERSION) return defaultState
     const state = { ...defaultState, ...parsed }
-    if (state.accentColor && state.accentColor !== '#7c6aff') {
-      applyAccent(state.accentColor)
-    }
+    if (state.accentColor && state.accentColor !== '#7c6aff') applyAccent(state.accentColor)
     return state
   } catch {
     return defaultState
   }
 }
 
-export function AppProvider({ children }) {
-  const [state, setState] = useState(loadFromStorage)
+// Builds the flat profiles row from a partial context state update.
+// Schema: name, emoji, weight, height, age, gender, goal, days_per_week
+// accentColor / preferences / muscleScores stay in localStorage only.
+function toProfileRow(partial) {
+  const row = {}
+  if (partial.userName  !== undefined) row.name  = partial.userName
+  if (partial.userEmoji !== undefined) row.emoji = partial.userEmoji
+  if (partial.userStats !== undefined) {
+    const s = partial.userStats
+    if (s.peso     != null) row.weight = s.peso
+    if (s.estatura != null) row.height = s.estatura
+    if (s.edad     != null) row.age    = s.edad
+    if (s.genero   !== undefined) row.gender = s.genero
+  }
+  if (partial.goals !== undefined) {
+    const g = partial.goals
+    if (g.goal        !== undefined) row.goal         = g.goal
+    if (g.daysPerWeek !== undefined) row.days_per_week = g.daysPerWeek
+  }
+  return row
+}
 
+// Builds local context state from a flat profiles DB row
+function fromProfileRow(row, prev) {
+  if (!row) return {}
+  return {
+    userName:  row.name  ?? prev.userName,
+    userEmoji: row.emoji ?? prev.userEmoji,
+    userStats: {
+      peso:     row.weight ?? prev.userStats?.peso    ?? null,
+      estatura: row.height ?? prev.userStats?.estatura ?? null,
+      edad:     row.age    ?? prev.userStats?.edad    ?? null,
+      genero:   row.gender ?? prev.userStats?.genero  ?? 'Masculino',
+    },
+    goals: {
+      daysPerWeek: row.days_per_week ?? prev.goals?.daysPerWeek ?? 4,
+      goal:        row.goal          ?? prev.goals?.goal ?? 'Ganar músculo',
+    },
+  }
+}
+
+// Keys in partial that trigger a Supabase profile sync
+const PROFILE_KEYS = new Set(['userName', 'userEmoji', 'userStats', 'goals'])
+
+export function AppProvider({ children, userId }) {
+  const [state,       setState]       = useState(loadFromStorage)
+  const [dataLoading, setDataLoading] = useState(true)
+  const [errorToast,  setErrorToast]  = useState(null)
+
+  // Always reflects current committed state — avoids stale closures in mutations
+  const stateRef   = useRef(state)
+  const toastTimer = useRef(null)
+
+  useEffect(() => { stateRef.current = state }, [state])
+
+  // Offline cache
   useEffect(() => {
     localStorage.setItem('fitflow_state', JSON.stringify(state))
   }, [state])
 
-  function updateState(partial) {
-    setState(prev => ({ ...prev, ...partial }))
+  // Load all user data from Supabase when userId is known
+  useEffect(() => {
+    if (!userId) { setDataLoading(false); return }
+    loadUserData(userId)
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function showError(msg) {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setErrorToast(msg)
+    toastTimer.current = setTimeout(() => setErrorToast(null), 3000)
   }
 
+  async function loadUserData(uid) {
+    setDataLoading(true)
+    try {
+      const [profile, plans, sessions, prs] = await Promise.all([
+        db.fetchProfile(uid),
+        db.fetchPlans(uid),
+        db.fetchSessions(uid),
+        db.fetchPRs(uid),
+      ])
+      setState(prev => ({
+        ...prev,
+        ...fromProfileRow(profile, prev),
+        plans,
+        weekHistory: sessions,
+        prs,
+      }))
+    } catch {
+      showError('Error al cargar los datos')
+    } finally {
+      setDataLoading(false)
+    }
+  }
+
+  // ─── Profile mutations ────────────────────────────────────────────────────
+
+  function updateState(partial) {
+    setState(prev => ({ ...prev, ...partial }))
+    if (!userId) return
+    const hasProfileKey = Object.keys(partial).some(k => PROFILE_KEYS.has(k))
+    if (!hasProfileKey) return
+    const row = toProfileRow(partial)
+    if (Object.keys(row).length === 0) return
+    db.updateProfile(userId, row).catch(() => showError('Error al guardar los cambios'))
+  }
+
+  // ─── Plan mutations ───────────────────────────────────────────────────────
+
   function addPlan(plan) {
-    setState(prev => ({ ...prev, plans: [...prev.plans, plan] }))
+    // Ensure plan has a UUID compatible with the Supabase uuid PK
+    const planWithId = { ...plan, id: crypto.randomUUID() }
+    setState(prev => ({ ...prev, plans: [...prev.plans, planWithId] }))
+    if (!userId) return
+    db.createPlan(userId, planWithId).catch(() => showError('Error al guardar el plan'))
   }
 
   function updatePlan(id, updated) {
@@ -119,27 +170,71 @@ export function AppProvider({ children }) {
       ...prev,
       plans: prev.plans.map(p => (p.id === id ? { ...p, ...updated } : p)),
     }))
+    if (!userId) return
+    db.updatePlan(id, updated).catch(() => showError('Error al actualizar el plan'))
   }
 
   function deletePlan(id) {
     setState(prev => ({ ...prev, plans: prev.plans.filter(p => p.id !== id) }))
+    if (!userId) return
+    db.deletePlan(id).catch(() => showError('Error al eliminar el plan'))
   }
 
+  // ─── Session mutations ────────────────────────────────────────────────────
+
+  function addSession(session) {
+    setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, session] }))
+    if (!userId) return
+    db.createSession(userId, session).catch(() => showError('Error al guardar la sesión'))
+  }
+
+  // ─── PR mutations ─────────────────────────────────────────────────────────
+
   function addPR(exerciseName, firstEntry) {
-    const newPR = { id: Date.now(), exerciseName, history: firstEntry ? [firstEntry] : [] }
+    // UUID required by personal_records PK
+    const newPR = { id: crypto.randomUUID(), exerciseName, history: firstEntry ? [firstEntry] : [] }
     setState(prev => ({ ...prev, prs: [...prev.prs, newPR] }))
+    if (!userId) return
+    db.createPR(userId, newPR).catch(() => showError('Error al guardar el récord'))
   }
 
   function addPREntry(prId, entry) {
+    const currentPR  = stateRef.current.prs.find(p => p.id === prId)
+    const newHistory = currentPR ? [...currentPR.history, entry] : [entry]
     setState(prev => ({
       ...prev,
-      prs: prev.prs.map(pr => pr.id === prId ? { ...pr, history: [...pr.history, entry] } : pr),
+      prs: prev.prs.map(pr => pr.id === prId ? { ...pr, history: newHistory } : pr),
     }))
+    if (!userId) return
+    db.updatePR(prId, newHistory).catch(() => showError('Error al guardar la entrada'))
   }
 
+  // ─── Auth ─────────────────────────────────────────────────────────────────
+
+  async function logout() {
+    localStorage.removeItem('fitflow_state')
+    await supabase.auth.signOut()
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   return (
-    <AppContext.Provider value={{ ...state, updateState, addPlan, updatePlan, deletePlan, addPR, addPREntry }}>
-      {children}
+    <AppContext.Provider value={{
+      ...state,
+      updateState, addPlan, updatePlan, deletePlan,
+      addSession, addPR, addPREntry, logout,
+      dataLoading,
+    }}>
+      {dataLoading ? (
+        <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full border-2 border-[rgba(124,106,255,0.3)] border-t-[#7c6aff] animate-spin" />
+        </div>
+      ) : children}
+      {errorToast && (
+        <div className="fixed bottom-[88px] left-1/2 -translate-x-1/2 bg-[#1e1e2e] border border-red-500/40 rounded-2xl px-5 py-3 text-[14px] text-[#f0eeff] shadow-lg z-[200] whitespace-nowrap animate-fade-in">
+          ⚠️ {errorToast}
+        </div>
+      )}
     </AppContext.Provider>
   )
 }
