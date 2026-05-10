@@ -16,7 +16,7 @@ function todayStr() {
 }
 
 export default function WorkoutMode({ planId, onClose }) {
-  const { plans, weekHistory, updateState } = useApp()
+  const { plans, addSession } = useApp()
   const plan = plans.find(p => p.id === planId)
 
   const [elapsed, setElapsed]     = useState(0)
@@ -56,15 +56,11 @@ export default function WorkoutMode({ planId, onClose }) {
   }
 
   function saveSession() {
-    updateState({
-      weekHistory: [
-        ...weekHistory,
-        {
-          fecha: todayStr(),
-          duracionMin: Math.max(1, Math.round(elapsed / 60)),
-          calorias: totalCalories,
-        },
-      ],
+    addSession({
+      fecha:       todayStr(),
+      duracionMin: Math.max(1, Math.round(elapsed / 60)),
+      calorias:    totalCalories,
+      planName:    plan.name,
     })
     onClose()
   }

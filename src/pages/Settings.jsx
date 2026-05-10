@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 import { useApp } from "../store/AppContext";
 
 const ACCENT_COLORS = ["#7c6aff", "#22d3a0", "#f59e0b", "#ef4444"];
@@ -53,12 +53,14 @@ function SettingRow({ label, children, border = true }) {
 }
 
 export default function Settings() {
-  const { preferences, accentColor, goals, updateState } = useApp();
+  const { preferences, accentColor, goals, updateState, logout } = useApp();
 
-  const [darkMode, setDarkMode] = useState(
+  const [darkMode,       setDarkMode]       = useState(
     () => localStorage.getItem("fitflow-dark-mode") !== "false",
   );
-  const [toast, setToast] = useState(false);
+  const [toast,          setToast]          = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut,     setLoggingOut]     = useState(false);
 
   const prefs = preferences ?? { reminders: false };
   const currentAccent = accentColor ?? "#7c6aff";
@@ -91,6 +93,12 @@ export default function Settings() {
   function showProximo() {
     setToast(true);
     setTimeout(() => setToast(false), 2000);
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await logout();
+    setLoggingOut(false);
   }
 
   return (
@@ -207,10 +215,62 @@ export default function Settings() {
         </div>
       </section>
 
+      {/* Cerrar sesión */}
+      <section className="px-5 mt-5 mb-2">
+        <button
+          onClick={() => setShowLogoutModal(true)}
+          className="w-full flex items-center justify-center gap-2 py-[14px] rounded-2xl bg-red-500/10 border border-red-500/25 text-[15px] font-semibold text-red-400 active:opacity-70 transition-opacity"
+        >
+          <LogOut size={18} strokeWidth={2} />
+          Cerrar sesión
+        </button>
+      </section>
+
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-[88px] left-1/2 -translate-x-1/2 bg-card border border-border rounded-2xl px-5 py-3 text-[14px] text-[#f0eeff] shadow-lg animate-fade-in z-50 whitespace-nowrap">
           Próximamente
+        </div>
+      )}
+
+      {/* Modal: confirmar cierre de sesión */}
+      {showLogoutModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm px-4 pb-[88px] animate-fade-in"
+          onClick={() => !loggingOut && setShowLogoutModal(false)}
+        >
+          <div
+            className="w-full max-w-[480px] bg-card rounded-[28px] border border-border p-6 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <div className="w-14 h-14 rounded-full bg-red-500/15 flex items-center justify-center">
+                <LogOut size={26} className="text-red-400" strokeWidth={1.75} />
+              </div>
+              <h3 className="font-display text-[18px] font-bold text-[#f0eeff]">
+                ¿Cerrar sesión?
+              </h3>
+              <p className="text-[13px] text-muted text-center">
+                Tus datos quedan guardados en la nube.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="w-full py-[13px] rounded-2xl bg-red-500 text-white font-semibold text-[15px] disabled:opacity-50 active:scale-[0.98] transition-all"
+              >
+                {loggingOut ? "Cerrando…" : "Cerrar sesión"}
+              </button>
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                disabled={loggingOut}
+                className="w-full py-[13px] rounded-2xl bg-white/[0.06] text-[#f0eeff] font-semibold text-[15px] active:opacity-70 transition-opacity"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
