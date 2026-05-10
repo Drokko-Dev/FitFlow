@@ -37,7 +37,11 @@ function Toggle({ on, onChange }) {
   return (
     <button
       onClick={() => onChange(!on)}
-      className={`w-11 h-6 rounded-full relative transition-colors duration-200 ${on ? 'bg-accent' : 'bg-white/[0.15]'}`}
+      className="w-11 h-6 rounded-full relative transition-colors duration-200"
+      style={on
+        ? { backgroundColor: 'rgb(var(--accent))' }
+        : { backgroundColor: 'var(--toggle-off)', boxShadow: '0 0 0 1px var(--toggle-off-bd)' }
+      }
     >
       <span
         className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all duration-200 ${

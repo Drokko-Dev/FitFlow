@@ -20,6 +20,9 @@
   --color-card:   #1e1e2e;
   --color-border: #2a2a40;
   --color-muted:  #8888aa;
+  /* toggle */
+  --toggle-off:    #3a3a55;
+  --toggle-off-bd: transparent;
 }
 
 /* ── Light theme override ── */
@@ -36,6 +39,8 @@
   --color-card:   #ffffff;
   --color-border: #c8c8dc;
   --color-muted:  #666680;
+  --toggle-off:    #d1d1e0;
+  --toggle-off-bd: #b0b0c8;
 }
 
 @layer base {
