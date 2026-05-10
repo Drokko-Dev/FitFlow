@@ -44,10 +44,13 @@ export default function PlanList({ onWorkout, onEdit, onCreate }) {
       ) : (
         <div className="px-5 flex flex-col gap-3">
           {plans.map((plan) => (
-            <button
+            <div
               key={plan.id}
               onClick={() => onWorkout(plan.id)}
-              className="bg-card border border-border rounded-2xl p-4 text-left w-full active:scale-[0.98] transition-transform"
+              onKeyDown={(e) => e.key === 'Enter' && onWorkout(plan.id)}
+              role="button"
+              tabIndex={0}
+              className="bg-card border border-border rounded-2xl p-4 text-left w-full cursor-pointer active:scale-[0.98] transition-transform"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -61,10 +64,7 @@ export default function PlanList({ onWorkout, onEdit, onCreate }) {
                   </p>
                 </div>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(plan.id);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); onEdit(plan.id) }}
                   className="w-9 h-9 rounded-full bg-white/[0.05] border border-border flex items-center justify-center shrink-0 active:scale-90 transition-transform"
                   aria-label={`Editar ${plan.name}`}
                 >
@@ -89,7 +89,7 @@ export default function PlanList({ onWorkout, onEdit, onCreate }) {
                   )}
                 </div>
               )}
-            </button>
+            </div>
           ))}
         </div>
       )}
