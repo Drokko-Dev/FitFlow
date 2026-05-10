@@ -49,21 +49,20 @@ src/
   components/
     AIMessage.jsx              # Tarjeta de sugerencia de IA (usa muscleScores)
     BodyMap.jsx                # Tarjeta flip 3D: SVG muscular ↔ barras de progreso
-    BottomNav.jsx              # Nav fija inferior con 3 tabs (pronto 4)
+    BottomNav.jsx              # Nav fija inferior con 4 tabs (iconos Lucide, w-1/4 cada uno)
     ExerciseCard.jsx           # Tarjeta simple (nombre + ícono) — stub
     PlanSummary.jsx            # Resumen de plan — stub
     WeekStats.jsx              # Estadísticas semanales (días, tiempo, kcal)
   pages/
     Home.jsx                   # Pantalla principal (saludo, AIMessage, WeekStats, BodyMap)
-    Profile.jsx                # Perfil completo: stats, edición, preferencias, objetivos
+    Profile.jsx                # Perfil: avatar, stats, Mis datos, IMC, Récords personales (PRs)
+    Settings.jsx               # Configuración: preferencias, objetivos, cuenta
     Exercises.jsx              # Controlador de vistas (estado local: list/workout/editor)
     exercises/
       PlanList.jsx             # Vista 1 — lista de planes
       WorkoutMode.jsx          # Vista 2 — entrenamiento con cronómetro y series
       PlanEditor.jsx           # Vista 3 — editor de plan en 2 pasos (slide)
 ```
-
-> **Próxima página**: `Settings.jsx` con ruta `/settings`. El `BottomNav` pasará de 3 a 4 tabs: Inicio, Ejercicios, Perfil, Ajustes.
 
 ## Sistema de temas
 
@@ -176,7 +175,7 @@ Ambas vienen de Google Fonts, cacheadas por el service worker con `CacheFirst`.
 
 Único store de la app. Persiste en `localStorage` bajo la clave `fitflow_state`.
 
-**Guardia de versión**: `DATA_VERSION = 3`. Si no coincide con localStorage, se resetea a `defaultState`.
+**Guardia de versión**: `DATA_VERSION = 4`. Si no coincide con localStorage, se resetea a `defaultState`.
 
 ### Estado expuesto por `useApp()`
 
@@ -202,14 +201,18 @@ preferences     // { reminders: boolean }
 accentColor     // string — hex del color de acento activo
 goals           // { daysPerWeek: number, goal: string }
 
-// Records personales (próximo)
-prs             // { [ejercicioId]: { peso, reps, fecha } }
+// Datos físicos del usuario
+userStats       // { peso: number|null, estatura: number|null, edad: number|null, genero: string }
 
-// Estadísticas globales (próximo)
-userStats       // { totalSesiones, totalMinutos, totalCalorias }
+// Records personales
+prs             // { id, exerciseName, history: { date: 'YYYY-MM-DD', weight: number }[] }[]
 
 // Actualización genérica (shallow merge)
 updateState(partial)
+
+// PRs CRUD
+addPR(exerciseName, firstEntry?)   // crea nuevo PR; firstEntry = { date, weight }
+addPREntry(prId, { date, weight }) // añade entrada al historial de un PR
 ```
 
 ### Estructura de un Plan
@@ -233,7 +236,7 @@ updateState(partial)
 
 | Clave localStorage | Contenido |
 |-------------------|-----------|
-| `fitflow_state` | Todo el estado de AppContext (planes, historial, preferencias, goals, accentColor) |
+| `fitflow_state` | Todo el estado de AppContext (planes, historial, preferencias, goals, accentColor, userStats, prs) |
 | `fitflow-dark-mode` | `'true'` \| `'false'` — tema activo |
 
 ## Catálogo de ejercicios (`src/data/exercises.js`)
@@ -267,7 +270,7 @@ muscleScores colores:
 ## Componentes principales
 
 ### `BottomNav`
-Nav fija `bottom-0`, centrada y limitada a 480 px. Actualmente **3 tabs**: Inicio (`/home`), Ejercicios (`/exercises`), Perfil (`/profile`). Usa `NavLink` de React Router para el estado activo. Próximamente 4 tabs con Settings.
+Nav fija `bottom-0`, centrada y limitada a 480 px. **4 tabs** con iconos Lucide (`Home`, `Dumbbell`, `User`, `Settings`): Inicio (`/home`), Ejercicios (`/exercises`), Perfil (`/profile`), Ajustes (`/settings`). Cada tab ocupa `w-1/4`. Usa `NavLink` de React Router para el estado activo.
 
 ### `BodyMap`
 Tarjeta con efecto flip (perspectiva 3D CSS). **Cara frontal**: dos SVGs del cuerpo humano (frente y espalda) coloreados según `muscleScores`. **Cara trasera**: barras de progreso por músculo con animación al entrar. Botón ↻ en cada cara para voltear. Leyenda de colores debajo.
@@ -295,12 +298,18 @@ Flujo de **2 pasos** con animación slide horizontal (`translate-x` + `transitio
 - ✕ en paso 2 elimina el ejercicio y vuelve al paso 1.
 
 ### `Profile`
-Página completa con:
-- **Header**: avatar emoji en círculo con gradiente accent, nombre editable inline, fecha de miembro.
+Página con:
+- **Header**: avatar emoji (click → modal 12 emojis), nombre editable inline con `›`, fecha de miembro.
 - **Stat cards**: Semanas activo (estático), Sesiones totales (`weekHistory.length`), Racha actual (días consecutivos).
-- **Mi perfil**: edición de nombre (inline input) y avatar (modal con grid de 12 emojis).
-- **Preferencias**: toggle modo oscuro (funcional), toggle recordatorios, selector de 4 colores de acento.
+- **Mis datos**: card con inputs numéricos (peso kg, estatura cm, edad años) + selector de género (Masculino / Femenino). Guarda en `userStats` del contexto al hacer blur.
+- **IMC**: se muestra solo si hay peso y estatura. Número grande + categoría coloreada + barra horizontal de 4 segmentos con indicador circular. Rango 15–40.
+- **Récords personales (PRs)**: lista de `prs` del contexto. Cada card muestra ejercicio, peso máximo y mini LineChart (recharts, sin ejes, 60px). Botón `+` en cada card abre modal "añadir entrada". Botón "Añadir" abre modal "Nuevo PR" con buscador del catálogo.
+
+### `Settings`
+Página de configuración con:
+- **Preferencias**: toggle modo oscuro (funcional, igual que antes en Profile), toggle recordatorios, selector de 4 colores de acento.
 - **Objetivos**: días por semana (3–6) y objetivo fitness (4 opciones).
+- **Cuenta**: fila "Exportar datos" → toast "Próximamente" 2 s; fila "Versión" → "FitFlow v1.0.0".
 
 ## Convenciones de código
 
