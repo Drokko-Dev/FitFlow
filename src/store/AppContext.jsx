@@ -123,11 +123,12 @@ export function AppProvider({ children, userId }) {
   async function loadUserData(uid) {
     setDataLoading(true)
     try {
-      const [profile, plans, sessions, prs] = await Promise.all([
+      const [profile, plans, sessions, prs, muscleScores] = await Promise.all([
         db.fetchProfile(uid),
         db.fetchPlans(uid),
         db.fetchSessions(uid),
         db.fetchPRs(uid),
+        db.calculateMuscleScores(uid),
       ])
       setState(prev => ({
         ...prev,
@@ -135,6 +136,7 @@ export function AppProvider({ children, userId }) {
         plans,
         weekHistory: sessions,
         prs,
+        muscleScores,
       }))
     } catch {
       showError('Error al cargar los datos')
@@ -182,10 +184,21 @@ export function AppProvider({ children, userId }) {
 
   // ─── Session mutations ────────────────────────────────────────────────────
 
-  function addSession(session) {
-    setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, session] }))
+  async function addSession(session) {
+    // Strip exercises from local weekHistory — they're only needed for muscle_history
+    const { exercises: sessionExercises, ...sessionData } = session
+    setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, sessionData] }))
     if (!userId) return
-    db.createSession(userId, session).catch(() => showError('Error al guardar la sesión'))
+    try {
+      const sessionId = await db.createSession(userId, sessionData)
+      if (sessionExercises?.length && sessionId) {
+        await db.insertMuscleHistory(userId, sessionId, sessionExercises, sessionData.fecha)
+      }
+      const newScores = await db.calculateMuscleScores(userId)
+      setState(prev => ({ ...prev, muscleScores: newScores }))
+    } catch {
+      showError('Error al guardar la sesión')
+    }
   }
 
   // ─── PR mutations ─────────────────────────────────────────────────────────

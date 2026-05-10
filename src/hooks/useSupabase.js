@@ -72,8 +72,9 @@ export async function fetchSessions(userId) {
   }))
 }
 
+// Returns the new session's UUID so muscle_history can reference it
 export async function createSession(userId, session) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('sessions')
     .insert({
       user_id:      userId,
@@ -82,7 +83,60 @@ export async function createSession(userId, session) {
       calories:     session.calorias,
       plan_name:    session.planName ?? null,
     })
+    .select('id')
+    .single()
   if (error) throw error
+  return data.id
+}
+
+// ─── Muscle history ───────────────────────────────────────────────────────────
+
+// Inserts one row per muscle group worked in the session.
+// exercises: the plan's exercise array [{ muscle, sets, ... }]
+export async function insertMuscleHistory(userId, sessionId, exercises, date) {
+  const totals = {}
+  for (const ex of exercises) {
+    if (ex.muscle) totals[ex.muscle] = (totals[ex.muscle] ?? 0) + (ex.sets ?? 0)
+  }
+  const rows = Object.entries(totals).map(([muscle, sets]) => ({
+    user_id:    userId,
+    session_id: sessionId,
+    muscle,
+    sets,
+    date,
+  }))
+  if (!rows.length) return
+  const { error } = await supabase.from('muscle_history').insert(rows)
+  if (error) throw error
+}
+
+// Calculates muscle scores from the last 14 days of muscle_history.
+// Score = min(100, round(totalSets / 15 * 100)) per muscle group.
+export async function calculateMuscleScores(userId) {
+  const since = new Date()
+  since.setDate(since.getDate() - 14)
+  const sinceStr = since.toISOString().slice(0, 10)
+
+  const { data, error } = await supabase
+    .from('muscle_history')
+    .select('muscle, sets')
+    .eq('user_id', userId)
+    .gte('date', sinceStr)
+  if (error) throw error
+
+  const MUSCLES  = ['pecho', 'espalda', 'brazos', 'hombros', 'pierna', 'core']
+  const OBJETIVO = 15
+
+  const totals = {}
+  for (const row of (data ?? [])) {
+    totals[row.muscle] = (totals[row.muscle] ?? 0) + row.sets
+  }
+
+  const scores = {}
+  for (const m of MUSCLES) {
+    scores[m] = Math.min(100, Math.round(((totals[m] ?? 0) / OBJETIVO) * 100))
+  }
+  return scores
 }
 
 // ─── Personal records ─────────────────────────────────────────────────────────

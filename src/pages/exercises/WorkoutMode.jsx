@@ -61,6 +61,7 @@ export default function WorkoutMode({ planId, onClose }) {
       duracionMin: Math.max(1, Math.round(elapsed / 60)),
       calorias:    totalCalories,
       planName:    plan.name,
+      exercises:   plan.exercises,
     })
     onClose()
   }
