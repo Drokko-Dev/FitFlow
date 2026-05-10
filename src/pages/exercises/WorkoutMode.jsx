@@ -70,7 +70,7 @@ export default function WorkoutMode({ planId, onClose }) {
   }
 
   if (!plan) return (
-    <div className="px-5 pt-[52px] text-muted">Plan no encontrado.</div>
+    <div className="min-h-full bg-bg px-5 pt-[52px] text-muted">Plan no encontrado.</div>
   )
 
   const totalCalories = Math.round(
@@ -78,7 +78,7 @@ export default function WorkoutMode({ planId, onClose }) {
   )
 
   return (
-    <div className="pb-10">
+    <div className="min-h-full bg-bg pb-10">
       <header className="sticky top-0 z-10 bg-bg border-b border-border/40 px-5 pt-[52px] pb-4 flex items-center justify-between">
         <div>
           <h1 className="font-display text-[20px] font-bold text-[#f0eeff]">{plan.name}</h1>

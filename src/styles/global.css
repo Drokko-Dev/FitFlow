@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --accent: 124 106 255;
+}
+
 @layer base {
   html, body, #root {
     height: 100%;
@@ -13,7 +17,7 @@
     @apply bg-bg font-body text-[#f0eeff] antialiased overflow-x-hidden;
   }
   #root {
-    @apply flex justify-center bg-[#06060a];
+    @apply flex justify-center bg-bg;
   }
   h1, h2, h3 {
     @apply font-display;

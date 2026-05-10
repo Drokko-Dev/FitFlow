@@ -95,7 +95,7 @@ export default function PlanEditor({ planId, onClose }) {
   const panel = 'absolute inset-0 overflow-y-auto no-scrollbar pb-[148px] transition-transform duration-[320ms] ease-in-out'
 
   return (
-    <div className="h-full relative overflow-hidden">
+    <div className="h-full bg-bg relative overflow-hidden">
 
       {/* ── PASO 1: Elige ejercicios ── */}
       <div className={`${panel} ${step === 1 ? 'translate-x-0' : '-translate-x-full'}`}>

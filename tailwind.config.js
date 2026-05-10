@@ -10,7 +10,7 @@ export default {
         card:    '#1e1e2e',
         card2:   '#252538',
         border:  '#2a2a40',
-        accent:  '#7c6aff',
+        accent:  'rgb(var(--accent) / <alpha-value>)',
         accent2: '#a855f7',
         green:   '#22d3a0',
         yellow:  '#f59e0b',

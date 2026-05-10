@@ -16,7 +16,7 @@ export default function Home() {
   const navigate = useNavigate()
 
   return (
-    <div className="pb-20">
+    <div className="min-h-full bg-bg pb-20">
       <header className="px-5 pt-[52px] pb-6 bg-gradient-to-b from-accent/[0.09] to-transparent">
         <div className="flex items-center gap-[14px]">
           <button

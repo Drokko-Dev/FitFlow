@@ -5,6 +5,13 @@ const AppContext = createContext(null)
 
 const DATA_VERSION = 3
 
+function applyAccent(hex) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  document.documentElement.style.setProperty('--accent', `${r} ${g} ${b}`)
+}
+
 function exEntry(id, sets, reps) {
   const ex = exercises.find(e => e.id === id)
   return { ...ex, sets, reps }
@@ -47,6 +54,9 @@ const defaultState = {
     { fecha: '2026-05-05', duracionMin: 55, calorias: 410 },
     { fecha: '2026-05-06', duracionMin: 38, calorias: 275 },
   ],
+  accentColor: '#7c6aff',
+  preferences: { reminders: false },
+  goals: { daysPerWeek: 4, goal: 'Ganar músculo' },
 }
 
 function loadFromStorage() {
@@ -55,7 +65,11 @@ function loadFromStorage() {
     if (!saved) return defaultState
     const parsed = JSON.parse(saved)
     if (parsed.dataVersion !== DATA_VERSION) return defaultState
-    return { ...defaultState, ...parsed }
+    const state = { ...defaultState, ...parsed }
+    if (state.accentColor && state.accentColor !== '#7c6aff') {
+      applyAccent(state.accentColor)
+    }
+    return state
   } catch {
     return defaultState
   }
