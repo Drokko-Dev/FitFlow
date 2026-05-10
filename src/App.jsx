@@ -4,6 +4,7 @@ import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import Exercises from './pages/Exercises'
 import Profile from './pages/Profile'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/exercises" element={<Exercises />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </main>
           <BottomNav />
