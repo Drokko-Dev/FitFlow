@@ -59,6 +59,11 @@ export default function BodyMap() {
     return () => clearTimeout(t)
   }, [isFlipped])
 
+  // Read theme on each render — BodyMap remounts on route change so this stays fresh
+  const isLight   = document.documentElement.getAttribute('data-theme') === 'light'
+  const svgFill   = isLight ? '#d4d4e8' : '#1e1e2e'
+  const svgBorder = isLight ? '#c8c8dc' : '#2a2a40'
+
   const bodyData = BODY_DATA_BASE.map(({ slug, key }) => ({
     slug,
     color: getColor(muscleScores[key] ?? 0),
@@ -86,9 +91,9 @@ export default function BodyMap() {
         >
           {/* FRONT face */}
           <div className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] rounded-[20px] bg-card border border-border overflow-hidden flex items-center justify-center">
-            <div className="flex gap-2 items-center justify-center">
-              <Body data={bodyData} side="front" gender="male" scale={BODY_SCALE} defaultFill="#1e1e2e" border="#2a2a40" />
-              <Body data={bodyData} side="back"  gender="male" scale={BODY_SCALE} defaultFill="#1e1e2e" border="#2a2a40" />
+            <div className="flex gap-2 items-center justify-center bg-[var(--color-card)] rounded-2xl" style={{ background: 'transparent' }}>
+              <Body data={bodyData} side="front" gender="male" scale={BODY_SCALE} defaultFill={svgFill} border={svgBorder} />
+              <Body data={bodyData} side="back"  gender="male" scale={BODY_SCALE} defaultFill={svgFill} border={svgBorder} />
             </div>
             <button
               className="absolute bottom-4 right-4 w-9 h-9 rounded-full bg-accent/15 border border-accent/40 text-accent text-lg flex items-center justify-center transition-[background,transform] hover:bg-accent/30 active:scale-[0.88] select-none"
