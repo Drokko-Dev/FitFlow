@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Info } from 'lucide-react'
 import { useApp } from '../../store/AppContext'
+import ExerciseDetailModal from '../../components/ExerciseDetailModal'
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60)
@@ -22,6 +24,7 @@ export default function WorkoutMode({ planId, onClose }) {
   const [elapsed, setElapsed]     = useState(0)
   const [animating, setAnimating] = useState(null)
   const [showComplete, setShowComplete] = useState(false)
+  const [detailEx, setDetailEx]   = useState(null)
   const [checked, setChecked] = useState(() => {
     if (!plan) return {}
     const init = {}
@@ -108,6 +111,13 @@ export default function WorkoutMode({ planId, onClose }) {
                   {isComplete && (
                     <span className="text-green text-[12px] font-semibold">✓ Listo</span>
                   )}
+                  <button
+                    onClick={() => setDetailEx(ex)}
+                    className="w-6 h-6 flex items-center justify-center text-muted active:opacity-60 transition-opacity shrink-0"
+                    aria-label={`Info sobre ${ex.name}`}
+                  >
+                    <Info size={15} />
+                  </button>
                 </div>
                 <p className="text-muted text-[12px] capitalize ml-8 mb-3">
                   {ex.muscle} · {ex.sets} × {ex.reps} reps
@@ -140,6 +150,10 @@ export default function WorkoutMode({ planId, onClose }) {
           )
         })}
       </div>
+
+      {detailEx && (
+        <ExerciseDetailModal exercise={detailEx} onClose={() => setDetailEx(null)} />
+      )}
 
       {showComplete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-5 animate-fade-in">

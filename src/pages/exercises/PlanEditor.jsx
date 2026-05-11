@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical } from 'lucide-react'
+import { GripVertical, Info } from 'lucide-react'
 import { exercises } from '../../data/exercises'
 import { useApp } from '../../store/AppContext'
+import ExerciseDetailModal from '../../components/ExerciseDetailModal'
 
 const MUSCLE_ORDER  = ['brazos', 'pecho', 'espalda', 'hombros', 'pierna', 'core']
 const MUSCLE_LABELS = {
@@ -112,6 +113,7 @@ export default function PlanEditor({ planId, onClose }) {
   const [name, setName]            = useState(existing?.name ?? '')
   const [search, setSearch]        = useState('')
   const [planExercises, setPlanEx] = useState(existing?.exercises ?? [])
+  const [detailEx, setDetailEx]    = useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -244,27 +246,39 @@ export default function PlanEditor({ planId, onClose }) {
                   {items.map(ex => {
                     const selected = selectedIds.has(ex.id)
                     return (
-                      <button
+                      <div
                         key={ex.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => toggleExercise(ex)}
-                        className={`flex items-center justify-between rounded-2xl px-4 py-[11px] border transition-all w-full text-left ${
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') toggleExercise(ex) }}
+                        className={`flex items-center justify-between rounded-2xl px-4 py-[11px] border transition-all w-full text-left cursor-pointer ${
                           selected
                             ? 'bg-green/[0.07] border-green/35'
                             : 'bg-card border-border active:border-accent/50'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-[18px] leading-none">{ex.icon}</span>
-                          <span className="text-[14px] font-medium text-[#f0eeff]">{ex.name}</span>
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <span className="text-[18px] leading-none shrink-0">{ex.icon}</span>
+                          <span className="text-[14px] font-medium text-[#f0eeff] truncate">{ex.name}</span>
                         </div>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[16px] font-bold shrink-0 transition-all ${
-                          selected
-                            ? 'bg-green/20 text-green'
-                            : 'bg-accent/15 text-accent'
-                        }`}>
-                          {selected ? '✓' : '+'}
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <button
+                            onClick={e => { e.stopPropagation(); setDetailEx(ex) }}
+                            className="w-6 h-6 flex items-center justify-center text-muted active:opacity-60 transition-opacity"
+                            aria-label={`Info sobre ${ex.name}`}
+                          >
+                            <Info size={15} />
+                          </button>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[16px] font-bold transition-all ${
+                            selected
+                              ? 'bg-green/20 text-green'
+                              : 'bg-accent/15 text-accent'
+                          }`}>
+                            {selected ? '✓' : '+'}
+                          </div>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -329,6 +343,10 @@ export default function PlanEditor({ planId, onClose }) {
           </DndContext>
         </section>
       </div>
+
+      {detailEx && (
+        <ExerciseDetailModal exercise={detailEx} onClose={() => setDetailEx(null)} />
+      )}
 
       {/* ── Botón fijo inferior (único, cambia contenido con el paso) ── */}
       <div className="fixed bottom-[68px] left-1/2 -translate-x-1/2 w-full max-w-[480px] px-5 pb-3 pt-3 bg-gradient-to-t from-bg via-bg/90 to-transparent pointer-events-none">
