@@ -1,11 +1,13 @@
+import { exercises } from '../../data/exercises'
 import { useApp } from "../../store/AppContext";
 
 function planDuration(plan) {
-  const secs = plan.exercises.reduce(
-    (acc, ex) => acc + ex.sets * ex.reps * ex.secPerRep,
-    0,
-  );
-  return Math.round(secs / 60);
+  const secs = plan.exercises.reduce((acc, ex) => {
+    const cat = exercises.find(e => e.id === ex.id)
+    if (!cat) return acc
+    return acc + (ex.sets * ex.reps * cat.secPerRep) + ((ex.sets - 1) * cat.restSec)
+  }, 0)
+  return Math.round(secs / 60)
 }
 
 export default function PlanList({ onWorkout, onEdit, onCreate }) {

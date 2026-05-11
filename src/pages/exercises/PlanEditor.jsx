@@ -49,9 +49,11 @@ export default function PlanEditor({ planId, onClose }) {
     .map(muscle => ({ muscle, items: filtered.filter(ex => ex.muscle === muscle) }))
     .filter(g => g.items.length > 0)
 
-  const totalMin = planExercises.reduce(
-    (acc, ex) => acc + ex.sets * ex.reps * ex.secPerRep, 0
-  ) / 60
+  const totalMin = planExercises.reduce((acc, ex) => {
+    const cat = exercises.find(e => e.id === ex.id)
+    if (!cat) return acc
+    return acc + (ex.sets * ex.reps * cat.secPerRep) + ((ex.sets - 1) * cat.restSec)
+  }, 0) / 60
 
   const canAdvance = name.trim().length > 0 && planExercises.length > 0
 
