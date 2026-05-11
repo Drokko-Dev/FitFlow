@@ -104,7 +104,7 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-bg pb-24">
       <header className="px-5 pt-[52px] pb-4 bg-gradient-to-b from-accent/[0.09] to-transparent">
-        <h1 className="font-display text-[26px] font-extrabold text-[#f0eeff]">
+        <h1 className="font-heading text-[26px] font-bold tracking-normal text-[#f0eeff]">
           Configuración
         </h1>
       </header>

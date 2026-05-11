@@ -18,8 +18,9 @@ export default {
         muted:   'var(--muted)',
       },
       fontFamily: {
-        display: ['Syne', 'sans-serif'],
-        body:    ['DM Sans', 'sans-serif'],
+        display:  ['Syne', 'sans-serif'],
+        body:     ['DM Sans', 'sans-serif'],
+        heading:  ['Plus Jakarta Sans', 'sans-serif'],
       },
       keyframes: {
         pulseDot: {

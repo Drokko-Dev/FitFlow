@@ -223,7 +223,7 @@ export default function Profile() {
           ) : (
             <button
               onClick={() => { setNameInput(userName); setEditingName(true) }}
-              className="font-display text-[24px] font-extrabold text-[#f0eeff] active:opacity-70 transition-opacity"
+              className="font-heading text-[24px] font-bold tracking-normal text-[#f0eeff] active:opacity-70 transition-opacity"
             >
               {userName} ›
             </button>
