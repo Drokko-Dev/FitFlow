@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { GripVertical } from 'lucide-react'
 import { exercises } from '../../data/exercises'
 import { useApp } from '../../store/AppContext'
 
@@ -30,6 +34,76 @@ function Counter({ value, onDec, onInc }) {
   )
 }
 
+function SortableExerciseCard({ ex, onRemove, onChangeSets, onChangeReps }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ex.id })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.7 : 1,
+        zIndex:   isDragging ? 10 : 'auto',
+      }}
+      className={`bg-card border rounded-2xl px-4 py-3 transition-shadow ${
+        isDragging ? 'border-accent/50 shadow-lg shadow-black/30' : 'border-border'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <button
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          className="text-muted/40 hover:text-muted mr-2 shrink-0 touch-none cursor-grab active:cursor-grabbing transition-colors"
+          tabIndex={-1}
+          aria-label="Arrastrar para reordenar"
+        >
+          <GripVertical size={18} />
+        </button>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-[18px] leading-none shrink-0">{ex.icon}</span>
+          <div className="min-w-0">
+            <p className="text-[14px] font-semibold text-[#f0eeff] truncate">{ex.name}</p>
+            <p className="text-[11px] text-muted capitalize">{ex.muscle}</p>
+          </div>
+        </div>
+        <button
+          onClick={() => onRemove(ex.id)}
+          className="w-7 h-7 rounded-full bg-white/[0.05] text-muted flex items-center justify-center shrink-0 ml-2 active:scale-90 transition-transform"
+          aria-label={`Eliminar ${ex.name}`}
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-[11px] text-muted w-12 shrink-0">Series</span>
+        <Counter
+          value={ex.sets}
+          onDec={() => onChangeSets(ex.id, -1)}
+          onInc={() => onChangeSets(ex.id, +1)}
+        />
+        <span className="text-muted text-[13px] px-1">×</span>
+        <span className="text-[11px] text-muted shrink-0">Reps</span>
+        <Counter
+          value={ex.reps}
+          onDec={() => onChangeReps(ex.id, -1)}
+          onInc={() => onChangeReps(ex.id, +1)}
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function PlanEditor({ planId, onClose }) {
   const { plans, addPlan, updatePlan } = useApp()
   const existing = planId ? plans.find(p => p.id === planId) : null
@@ -38,6 +112,13 @@ export default function PlanEditor({ planId, onClose }) {
   const [name, setName]            = useState(existing?.name ?? '')
   const [search, setSearch]        = useState('')
   const [planExercises, setPlanEx] = useState(existing?.exercises ?? [])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    })
+  )
 
   const selectedIds = new Set(planExercises.map(ex => ex.id))
 
@@ -80,6 +161,17 @@ export default function PlanEditor({ planId, onClose }) {
     setPlanEx(prev =>
       prev.map(ex => ex.id === id ? { ...ex, reps: Math.max(1, ex.reps + delta) } : ex)
     )
+  }
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (active.id !== over?.id) {
+      setPlanEx(prev => {
+        const oldIndex = prev.findIndex(e => e.id === active.id)
+        const newIndex = prev.findIndex(e => e.id === over.id)
+        return arrayMove(prev, oldIndex, newIndex)
+      })
+    }
   }
 
   function savePlan() {
@@ -213,44 +305,28 @@ export default function PlanEditor({ planId, onClose }) {
         </div>
 
         <section className="px-5">
-          <div className="flex flex-col gap-3">
-            {planExercises.map(ex => (
-              <div key={ex.id} className="bg-card border border-border rounded-2xl px-4 py-3">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[18px] leading-none shrink-0">{ex.icon}</span>
-                    <div className="min-w-0">
-                      <p className="text-[14px] font-semibold text-[#f0eeff] truncate">{ex.name}</p>
-                      <p className="text-[11px] text-muted capitalize">{ex.muscle}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => removeExercise(ex.id)}
-                    className="w-7 h-7 rounded-full bg-white/[0.05] text-muted flex items-center justify-center shrink-0 ml-2 active:scale-90 transition-transform"
-                    aria-label={`Eliminar ${ex.name}`}
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-[11px] text-muted w-12 shrink-0">Series</span>
-                  <Counter
-                    value={ex.sets}
-                    onDec={() => changeSets(ex.id, -1)}
-                    onInc={() => changeSets(ex.id, +1)}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={planExercises.map(e => e.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="flex flex-col gap-3">
+                {planExercises.map(ex => (
+                  <SortableExerciseCard
+                    key={ex.id}
+                    ex={ex}
+                    onRemove={removeExercise}
+                    onChangeSets={changeSets}
+                    onChangeReps={changeReps}
                   />
-                  <span className="text-muted text-[13px] px-1">×</span>
-                  <span className="text-[11px] text-muted shrink-0">Reps</span>
-                  <Counter
-                    value={ex.reps}
-                    onDec={() => changeReps(ex.id, -1)}
-                    onInc={() => changeReps(ex.id, +1)}
-                  />
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </section>
       </div>
 
