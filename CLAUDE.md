@@ -50,7 +50,7 @@ src/
   store/
     AppContext.jsx              # Estado global + localStorage + CRUD + sync Supabase
   data/
-    exercises.js               # Catálogo de 23 ejercicios (solo local, no en Supabase)
+    exercises.js               # Catálogo de 62 ejercicios (solo local, no en Supabase)
   components/
     AIMessage.jsx              # Tarjeta de sugerencia de IA (usa muscleScores)
     BodyMap.jsx                # Tarjeta flip 3D: SVG muscular ↔ barras de progreso
@@ -239,7 +239,8 @@ dataLoading     // boolean — true mientras carga datos de Supabase al iniciar
   exercises: [
     {
       id, name, muscle, category,
-      description, secPerRep, calPerRep, icon,  // del catálogo
+      description, secPerRep, calPerRep, restSec, icon,  // del catálogo
+      variation?,  // nombre del ejercicio base (opcional)
       sets: number,
       reps: number,
     }
@@ -258,24 +259,37 @@ Supabase es la fuente de verdad para `plans`, `weekHistory`, `prs`, `profile`. E
 
 ## Catálogo de ejercicios (`src/data/exercises.js`)
 
-23 ejercicios locales, **no se almacenan en Supabase**. Los planes guardan el objeto de ejercicio completo en `exercises (jsonb)`.
+62 ejercicios locales, **no se almacenan en Supabase**. Los planes guardan el objeto de ejercicio completo en `exercises (jsonb)`.
 
-| Músculo | Ejercicios |
-|---------|-----------|
-| `pecho` | Press de Banca, Aperturas, Flexiones, Press Inclinado |
-| `espalda` | Peso Muerto, Dominadas, Remo con Barra, Jalón Polea |
-| `brazos` | Curl de Bíceps, Curl Martillo, Tríceps Polea, Fondos |
-| `hombros` | Press Militar, Elevaciones Lat., Face Pull |
-| `pierna` | Sentadilla, Prensa de Pierna, Zancadas, Leg Curl, Pantorrillas |
-| `core` | Plancha, Abdominales, Rueda Abdominal |
+| Músculo | Ejercicios (base + variaciones) |
+|---------|--------------------------------|
+| `pecho` | Press de Banca, Aperturas, Flexiones, Press Inclinado, Press con Mancuernas, Press Declinado, Fondos en Paralelas, Crossover en Polea, Push-up Diamante |
+| `espalda` | Peso Muerto, Dominadas, Remo con Barra, Jalón Polea, Remo en Polea Baja, Remo con Mancuerna, Pull-over con Mancuerna, Hiperextensiones, Remo en Máquina |
+| `brazos` | Curl de Bíceps, Curl Martillo, Tríceps Polea, Fondos, Curl con Barra, Curl en Polea, Curl Concentrado, Curl 21s, Extensión Tumbado, Patada de Tríceps, Extensión sobre Cabeza, Dips entre Bancos |
+| `hombros` | Press Militar, Elevaciones Lat., Face Pull, Press Arnold, Elevaciones Frontales, Pájaros, Encogimientos, Press con Mancuernas |
+| `pierna` | Sentadilla, Prensa de Pierna, Zancadas, Leg Curl, Pantorrillas, Sentadilla Sumo, Sentadilla Búlgara, Peso Muerto Rumano, Hip Thrust, Extensión de Cuádriceps, Abductores, Adductores, Step-up |
+| `core` | Plancha, Abdominales, Rueda Abdominal, Crunch, Crunch Inverso, Russian Twist, Elevación de Piernas, Plancha Lateral, Dead Bug, Dragon Flag, Cable Crunch |
 
-Cada ejercicio: `{ id, name, muscle, category, description, secPerRep, calPerRep, icon }`.
+Cada ejercicio: `{ id, name, muscle, category, description, secPerRep, calPerRep, restSec, icon, variation? }`.
+
+- **`restSec`** — descanso entre series (segundos). Basado en Schoenfeld 2016:
+  - `fuerza`: 120 s (recuperación del SNC)
+  - `aislamiento`: 60 s (metabólico)
+  - `peso corporal`: 45 s (alta densidad)
+  - `máquina`: 60 s (similar a aislamiento)
+- **`variation`** — nombre del ejercicio base del que deriva (opcional). Ej.: `variation: 'Curl de Bíceps'`.
 
 ### Fórmulas de negocio
 
 ```
-duracionMin = series × reps × secPerRep / 60
-calorias    = series × reps × calPerRep
+// Tiempo estimado (incluye descanso entre series)
+tiempoSeg = (sets × reps × secPerRep) + ((sets - 1) × restSec)
+tiempoMin = tiempoSeg / 60
+
+// Usado en: PlanEditor (tiempo en vivo paso 2), PlanList (duración en card)
+// WorkoutMode usa elapsed (cronómetro real), no esta fórmula
+
+calorias = series × reps × calPerRep
 
 muscleScores colores:
   ≥ 60  → green  (#22d3a0)
@@ -283,6 +297,8 @@ muscleScores colores:
   <  35 → red    (#ef4444)
   =   0 → gris   (sin datos)
 ```
+
+Al calcular duración de un plan, hacer lookup al catálogo por `ex.id` para obtener `secPerRep` y `restSec` actualizados (los planes almacenan una copia del ejercicio que puede ser antigua).
 
 ## Sistema de temas
 
