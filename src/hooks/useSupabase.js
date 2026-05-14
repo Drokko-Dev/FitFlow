@@ -56,12 +56,12 @@ export async function deletePlan(id) {
 }
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
-// Table columns: date, duration_min, calories, plan_name
+// Table columns: date, duration_min, calories, plan_name, exercises
 
 export async function fetchSessions(userId) {
   const { data, error } = await supabase
     .from('sessions')
-    .select('date, duration_min, calories')
+    .select('date, duration_min, calories, plan_name, exercises')
     .eq('user_id', userId)
     .order('date', { ascending: false })
   if (error) throw error
@@ -69,6 +69,8 @@ export async function fetchSessions(userId) {
     fecha:       s.date,
     duracionMin: s.duration_min,
     calorias:    s.calories,
+    planName:    s.plan_name ?? null,
+    exercises:   s.exercises ?? [],
   }))
 }
 
@@ -82,6 +84,7 @@ export async function createSession(userId, session) {
       duration_min: session.duracionMin,
       calories:     session.calorias,
       plan_name:    session.planName ?? null,
+      exercises:    session.exercises ?? null,
     })
     .select('id')
     .single()

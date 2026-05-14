@@ -5,6 +5,7 @@ import { AppProvider } from './store/AppContext'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import Exercises from './pages/Exercises'
+import History from './pages/History'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="/" element={<Navigate to="/home" replace />} />
               <Route path="/home"      element={<Home />} />
               <Route path="/exercises" element={<Exercises />} />
+              <Route path="/history"   element={<History />} />
               <Route path="/profile"   element={<Profile />} />
               <Route path="/settings"  element={<Settings />} />
             </Routes>

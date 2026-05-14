@@ -185,12 +185,12 @@ export function AppProvider({ children, userId }) {
   // ─── Session mutations ────────────────────────────────────────────────────
 
   async function addSession(session) {
-    // Strip exercises from local weekHistory — they're only needed for muscle_history
     const { exercises: sessionExercises, ...sessionData } = session
-    setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, sessionData] }))
+    const localEntry = { ...sessionData, exercises: sessionExercises ?? [] }
+    setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, localEntry] }))
     if (!userId) return
     try {
-      const sessionId = await db.createSession(userId, sessionData)
+      const sessionId = await db.createSession(userId, { ...sessionData, exercises: sessionExercises })
       if (sessionExercises?.length && sessionId) {
         await db.insertMuscleHistory(userId, sessionId, sessionExercises, sessionData.fecha)
       }

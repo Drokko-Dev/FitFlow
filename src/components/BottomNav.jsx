@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Dumbbell, User, Settings } from 'lucide-react'
+import { Home, Dumbbell, CalendarDays, User, Settings } from 'lucide-react'
 
 const tabs = [
-  { to: '/home',      Icon: Home,     label: 'Inicio'        },
-  { to: '/exercises', Icon: Dumbbell, label: 'Ejercicios'    },
-  { to: '/profile',   Icon: User,     label: 'Perfil'        },
-  { to: '/settings',  Icon: Settings, label: 'Ajustes'       },
+  { to: '/home',      Icon: Home,         label: 'Inicio'     },
+  { to: '/exercises', Icon: Dumbbell,     label: 'Ejercicios' },
+  { to: '/history',   Icon: CalendarDays, label: 'Historial'  },
+  { to: '/profile',   Icon: User,         label: 'Perfil'     },
+  { to: '/settings',  Icon: Settings,     label: 'Ajustes'    },
 ]
 
 export default function BottomNav() {
@@ -16,11 +17,11 @@ export default function BottomNav() {
           key={to}
           to={to}
           className={({ isActive }) =>
-            `w-1/4 flex flex-col items-center gap-[3px] py-2 rounded-[10px] transition-colors ${isActive ? 'text-[#a898ff]' : 'text-[var(--color-muted)]'}`
+            `w-1/5 flex flex-col items-center gap-[3px] py-2 rounded-[10px] transition-colors ${isActive ? 'text-[#a898ff]' : 'text-[var(--color-muted)]'}`
           }
         >
           <Icon size={20} strokeWidth={1.75} />
-          <span className="text-[11px] font-medium tracking-[0.02em]">{label}</span>
+          <span className="text-[10px] font-medium tracking-[0.02em]">{label}</span>
         </NavLink>
       ))}
     </nav>
