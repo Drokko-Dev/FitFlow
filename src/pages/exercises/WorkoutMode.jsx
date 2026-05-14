@@ -3,8 +3,6 @@ import { Info } from "lucide-react";
 import { useApp } from "../../store/AppContext";
 import ExerciseDetailModal from "../../components/ExerciseDetailModal";
 
-const INTER_REST_SECS = 90;
-
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -16,10 +14,10 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function RestCard({ seconds, onSkip }) {
+function RestCard({ seconds, totalSecs, onSkip }) {
   const R = 30;
   const C = 2 * Math.PI * R;
-  const dash = C * (seconds / INTER_REST_SECS);
+  const dash = C * (seconds / totalSecs);
 
   return (
     <div className="animate-fade-in rounded-2xl border-2 border-dashed border-accent/50 bg-accent/[0.04] px-5 py-5 flex flex-col items-center gap-3">
@@ -76,6 +74,7 @@ function RestCard({ seconds, onSkip }) {
 export default function WorkoutMode({ planId, onClose }) {
   const { plans, addSession } = useApp();
   const plan = plans.find((p) => p.id === planId);
+  const REST_SECS = plan?.restBetweenSets ?? 90;
 
   const [elapsed, setElapsed] = useState(0);
   const [animating, setAnimating] = useState(null);
@@ -84,7 +83,7 @@ export default function WorkoutMode({ planId, onClose }) {
   const [interRest, setInterRest] = useState({
     active: false,
     afterIndex: null,
-    seconds: INTER_REST_SECS,
+    seconds: REST_SECS,
   });
   const [checked, setChecked] = useState(() => {
     if (!plan) return {};
@@ -122,7 +121,7 @@ export default function WorkoutMode({ planId, onClose }) {
               }),
             150,
           );
-          return { active: false, afterIndex: null, seconds: INTER_REST_SECS };
+          return { active: false, afterIndex: null, seconds: REST_SECS };
         }
         return { ...prev, seconds: prev.seconds - 1 };
       });
@@ -146,7 +145,7 @@ export default function WorkoutMode({ planId, onClose }) {
 
   function skipRest() {
     const nextIdx = interRest.afterIndex + 1;
-    setInterRest({ active: false, afterIndex: null, seconds: INTER_REST_SECS });
+    setInterRest({ active: false, afterIndex: null, seconds: REST_SECS });
     setTimeout(
       () =>
         cardRefs.current[nextIdx]?.scrollIntoView({
@@ -183,7 +182,7 @@ export default function WorkoutMode({ planId, onClose }) {
           setInterRest({
             active: true,
             afterIndex: exIdx,
-            seconds: INTER_REST_SECS,
+            seconds: REST_SECS,
           }),
         400,
       );
@@ -196,7 +195,7 @@ export default function WorkoutMode({ planId, onClose }) {
       setInterRest({
         active: false,
         afterIndex: null,
-        seconds: INTER_REST_SECS,
+        seconds: REST_SECS,
       });
     }
   }
@@ -317,16 +316,12 @@ export default function WorkoutMode({ planId, onClose }) {
               {exIdx < plan.exercises.length - 1 &&
                 (showRest ? (
                   <div ref={restCardRef}>
-                    <RestCard seconds={interRest.seconds} onSkip={skipRest} />
+                    <RestCard seconds={interRest.seconds} totalSecs={REST_SECS} onSkip={skipRest} />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-[6px] py-2 px-4 rounded-xl border border-dashed border-accent">
-                    <span className="text-[13px] leading-none text-accent">
-                      ⏱
-                    </span>
-                    <span className="text-[12px] text-accent">
-                      90 seg de descanso
-                    </span>
+                  <div className="flex items-center justify-center gap-[6px] py-2 px-4 rounded-xl border border-dashed border-accent/40">
+                    <span className="text-[13px] leading-none text-accent/70">⏱</span>
+                    <span className="text-[12px] text-accent/70">{REST_SECS} seg de descanso</span>
                   </div>
                 ))}
             </Fragment>

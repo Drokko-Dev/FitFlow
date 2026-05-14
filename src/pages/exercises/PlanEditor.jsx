@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Info } from 'lucide-react'
+import { GripVertical, Info, Trash2 } from 'lucide-react'
 import { exercises } from '../../data/exercises'
 import { useApp } from '../../store/AppContext'
 import ExerciseDetailModal from '../../components/ExerciseDetailModal'
@@ -11,6 +11,27 @@ const MUSCLE_ORDER  = ['brazos', 'pecho', 'espalda', 'hombros', 'pierna', 'core'
 const MUSCLE_LABELS = {
   brazos: 'Brazos', pecho: 'Pecho', espalda: 'Espalda',
   hombros: 'Hombros', pierna: 'Pierna', core: 'Core',
+}
+
+const REST_PRESETS = [
+  { emoji: '🏃', label: 'Resistencia', secs: 45,  desc: 'Poco descanso, más cardio' },
+  { emoji: '💪', label: 'Hipertrofia', secs: 90,  desc: 'Balance ideal para ganar músculo' },
+  { emoji: '🏋️', label: 'Fuerza',      secs: 120, desc: 'Más descanso, más carga' },
+]
+
+function StepDots({ step }) {
+  return (
+    <div className="flex items-center gap-[5px]">
+      {[1, 2, 3].map(s => (
+        <div
+          key={s}
+          className={`h-[7px] rounded-full transition-all duration-300 ${
+            step === s ? 'w-4 bg-accent' : 'w-[7px] border border-accent/40 bg-transparent'
+          }`}
+        />
+      ))}
+    </div>
+  )
 }
 
 function Counter({ value, onDec, onInc }) {
@@ -37,13 +58,8 @@ function Counter({ value, onDec, onInc }) {
 
 function SortableExerciseCard({ ex, onRemove, onChangeSets, onChangeReps }) {
   const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
+    attributes, listeners, setNodeRef, setActivatorNodeRef,
+    transform, transition, isDragging,
   } = useSortable({ id: ex.id })
 
   return (
@@ -53,7 +69,7 @@ function SortableExerciseCard({ ex, onRemove, onChangeSets, onChangeReps }) {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.7 : 1,
-        zIndex:   isDragging ? 10 : 'auto',
+        zIndex:  isDragging ? 10 : 'auto',
       }}
       className={`bg-card border rounded-2xl px-4 py-3 transition-shadow ${
         isDragging ? 'border-accent/50 shadow-lg shadow-black/30' : 'border-border'
@@ -106,20 +122,20 @@ function SortableExerciseCard({ ex, onRemove, onChangeSets, onChangeReps }) {
 }
 
 export default function PlanEditor({ planId, onClose }) {
-  const { plans, addPlan, updatePlan } = useApp()
+  const { plans, addPlan, updatePlan, deletePlan } = useApp()
   const existing = planId ? plans.find(p => p.id === planId) : null
 
-  const [step, setStep]            = useState(1)
-  const [name, setName]            = useState(existing?.name ?? '')
-  const [search, setSearch]        = useState('')
-  const [planExercises, setPlanEx] = useState(existing?.exercises ?? [])
-  const [detailEx, setDetailEx]    = useState(null)
+  const [step, setStep]             = useState(1)
+  const [name, setName]             = useState(existing?.name ?? '')
+  const [search, setSearch]         = useState('')
+  const [planExercises, setPlanEx]  = useState(existing?.exercises ?? [])
+  const [restBetweenSets, setRest]  = useState(existing?.restBetweenSets ?? 90)
+  const [detailEx, setDetailEx]     = useState(null)
+  const [showDelete, setShowDelete] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 150, tolerance: 5 },
-    })
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   )
 
   const selectedIds = new Set(planExercises.map(ex => ex.id))
@@ -165,8 +181,7 @@ export default function PlanEditor({ planId, onClose }) {
     )
   }
 
-  function handleDragEnd(event) {
-    const { active, over } = event
+  function handleDragEnd({ active, over }) {
     if (active.id !== over?.id) {
       setPlanEx(prev => {
         const oldIndex = prev.findIndex(e => e.id === active.id)
@@ -179,12 +194,18 @@ export default function PlanEditor({ planId, onClose }) {
   function savePlan() {
     if (!name.trim() || planExercises.length === 0) return
     const plan = {
-      id:        existing?.id ?? Date.now().toString(),
-      name:      name.trim(),
-      exercises: planExercises,
+      id:              existing?.id ?? Date.now().toString(),
+      name:            name.trim(),
+      exercises:       planExercises,
+      restBetweenSets,
     }
     if (existing) updatePlan(existing.id, plan)
     else          addPlan(plan)
+    onClose()
+  }
+
+  function confirmDelete() {
+    deletePlan(existing.id)
     onClose()
   }
 
@@ -196,16 +217,30 @@ export default function PlanEditor({ planId, onClose }) {
       {/* ── PASO 1: Elige ejercicios ── */}
       <div className={`${panel} ${step === 1 ? 'translate-x-0' : '-translate-x-full'}`}>
 
-        <header className="px-5 pt-[52px] pb-5 flex items-center justify-between">
-          <h1 className="font-display text-[22px] font-bold text-[#f0eeff]">
-            {existing ? 'Editar Plan' : 'Nuevo Plan'}
-          </h1>
-          <button
-            onClick={onClose}
-            className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
-          >
-            Cancelar
-          </button>
+        <header className="px-5 pt-[52px] pb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="font-display text-[22px] font-bold text-[#f0eeff]">
+              {existing ? 'Editar Plan' : 'Nuevo Plan'}
+            </h1>
+            <div className="flex items-center gap-3">
+              {existing && (
+                <button
+                  onClick={() => setShowDelete(true)}
+                  className="w-8 h-8 flex items-center justify-center text-red-400 active:opacity-60 transition-opacity"
+                  aria-label="Eliminar plan"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+          <StepDots step={step} />
         </header>
 
         <div className="px-5 mb-7">
@@ -289,21 +324,35 @@ export default function PlanEditor({ planId, onClose }) {
       </div>
 
       {/* ── PASO 2: Configura tu plan ── */}
-      <div className={`${panel} ${step === 1 ? 'translate-x-full' : 'translate-x-0'}`}>
+      <div className={`${panel} ${step < 2 ? 'translate-x-full' : step === 2 ? 'translate-x-0' : '-translate-x-full'}`}>
 
-        <header className="px-5 pt-[52px] pb-5 flex items-center justify-between">
-          <button
-            onClick={() => setStep(1)}
-            className="flex items-center gap-1 text-accent text-[14px] font-semibold active:opacity-60 transition-opacity"
-          >
-            ← Volver
-          </button>
-          <button
-            onClick={onClose}
-            className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
-          >
-            Cancelar
-          </button>
+        <header className="px-5 pt-[52px] pb-4">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setStep(1)}
+              className="flex items-center gap-1 text-accent text-[14px] font-semibold active:opacity-60 transition-opacity"
+            >
+              ← Volver
+            </button>
+            <div className="flex items-center gap-3">
+              {existing && (
+                <button
+                  onClick={() => setShowDelete(true)}
+                  className="w-8 h-8 flex items-center justify-center text-red-400 active:opacity-60 transition-opacity"
+                  aria-label="Eliminar plan"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+          <StepDots step={step} />
         </header>
 
         <div className="px-5 mb-5">
@@ -344,11 +393,133 @@ export default function PlanEditor({ planId, onClose }) {
         </section>
       </div>
 
+      {/* ── PASO 3: Tiempo de descanso ── */}
+      <div className={`${panel} ${step < 3 ? 'translate-x-full' : 'translate-x-0'}`}>
+
+        <header className="px-5 pt-[52px] pb-4">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setStep(2)}
+              className="flex items-center gap-1 text-accent text-[14px] font-semibold active:opacity-60 transition-opacity"
+            >
+              ← Volver
+            </button>
+            <div className="flex items-center gap-3">
+              {existing && (
+                <button
+                  onClick={() => setShowDelete(true)}
+                  className="w-8 h-8 flex items-center justify-center text-red-400 active:opacity-60 transition-opacity"
+                  aria-label="Eliminar plan"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+          <StepDots step={step} />
+        </header>
+
+        <div className="px-5">
+          <h1 className="font-display text-[26px] font-extrabold text-[#f0eeff] leading-tight">
+            ¿Cuánto descansas entre series?
+          </h1>
+          <p className="text-[13px] text-muted mt-1">Basado en tu objetivo de entrenamiento</p>
+
+          <div className="flex flex-col gap-3 mt-5">
+            {REST_PRESETS.map(preset => (
+              <div
+                key={preset.secs}
+                role="button"
+                tabIndex={0}
+                onClick={() => setRest(preset.secs)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setRest(preset.secs) }}
+                className={`flex items-center gap-4 rounded-2xl px-5 py-4 border transition-all cursor-pointer ${
+                  restBetweenSets === preset.secs
+                    ? 'bg-accent/10 border-accent'
+                    : 'bg-card border-border'
+                }`}
+              >
+                <span className="text-[28px] leading-none">{preset.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold text-[#f0eeff]">{preset.label}</p>
+                  <p className="text-[12px] text-muted">{preset.desc}</p>
+                </div>
+                <span className="font-display text-[14px] font-bold text-accent shrink-0">{preset.secs}s</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <p className="text-[11px] font-semibold text-muted uppercase tracking-[0.08em] mb-3">
+              O ajusta manualmente
+            </p>
+            <div className="bg-card border border-border rounded-2xl px-5 py-5 flex items-center justify-between gap-4">
+              <button
+                onClick={() => setRest(r => Math.max(30, r - 15))}
+                className="w-11 h-11 rounded-full bg-white/[0.07] text-[#f0eeff] text-[24px] flex items-center justify-center active:scale-90 transition-transform shrink-0"
+              >
+                −
+              </button>
+              <div className="text-center flex-1">
+                <p className="font-display text-[32px] font-extrabold text-[#f0eeff] leading-none">
+                  {restBetweenSets}
+                </p>
+                <p className="text-[12px] text-muted mt-1">
+                  {restBetweenSets < 60
+                    ? 'seg'
+                    : `seg · ${Math.floor(restBetweenSets / 60)}:${String(restBetweenSets % 60).padStart(2, '0')} min`}
+                </p>
+              </div>
+              <button
+                onClick={() => setRest(r => Math.min(300, r + 15))}
+                className="w-11 h-11 rounded-full bg-white/[0.07] text-[#f0eeff] text-[24px] flex items-center justify-center active:scale-90 transition-transform shrink-0"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Modal confirmación de eliminación ── */}
+      {showDelete && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm px-5 pb-8 animate-fade-in">
+          <div className="w-full max-w-[480px] bg-card rounded-[28px] border border-border p-6 flex flex-col gap-4 animate-slide-up">
+            <div>
+              <h2 className="font-display text-[18px] font-bold text-[#f0eeff]">
+                ¿Eliminar {existing?.name}?
+              </h2>
+              <p className="text-[13px] text-muted mt-1">Esta acción no se puede deshacer</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDelete(false)}
+                className="flex-1 py-[13px] rounded-2xl bg-white/[0.06] border border-border text-[#f0eeff] font-semibold text-[14px] active:opacity-70 transition-opacity"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-[13px] rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-[14px] active:opacity-70 transition-opacity"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {detailEx && (
         <ExerciseDetailModal exercise={detailEx} onClose={() => setDetailEx(null)} />
       )}
 
-      {/* ── Botón fijo inferior (único, cambia contenido con el paso) ── */}
+      {/* ── Botón fijo inferior ── */}
       <div className="fixed bottom-[68px] left-1/2 -translate-x-1/2 w-full max-w-[480px] px-5 pb-3 pt-3 bg-gradient-to-t from-bg via-bg/90 to-transparent pointer-events-none">
         <div className="pointer-events-auto">
           {step === 1 ? (
@@ -364,6 +535,14 @@ export default function PlanEditor({ planId, onClose }) {
                   ({planExercises.length} {planExercises.length === 1 ? 'ejercicio' : 'ejercicios'})
                 </span>
               )}
+            </button>
+          ) : step === 2 ? (
+            <button
+              onClick={() => setStep(3)}
+              disabled={planExercises.length === 0}
+              className="w-full bg-accent disabled:opacity-35 disabled:cursor-not-allowed text-white font-display font-bold text-[16px] py-[14px] rounded-2xl active:scale-[0.98] transition-transform"
+            >
+              Siguiente →
             </button>
           ) : (
             <button
