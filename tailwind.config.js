@@ -18,9 +18,8 @@ export default {
         muted:   'var(--muted)',
       },
       fontFamily: {
-        display:  ['Syne', 'sans-serif'],
-        body:     ['DM Sans', 'sans-serif'],
-        heading:  ['Plus Jakarta Sans', 'sans-serif'],
+        display: ['Bricolage Grotesque', 'sans-serif'],
+        body:    ['Outfit', 'sans-serif'],
       },
       keyframes: {
         pulseDot: {

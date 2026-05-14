@@ -62,7 +62,7 @@ export default function WeekStats() {
             style={{ borderTopColor: color }}
           >
             <Icon size={28} color={color} strokeWidth={1.75} />
-            <div className="font-display text-2xl font-bold text-[#f0eeff] leading-none">
+            <div className="font-body text-2xl font-bold text-[#f0eeff] leading-none">
               {value}
               <span className="font-body text-xs font-normal text-[#8b87a8] ml-[3px]">{unit}</span>
             </div>

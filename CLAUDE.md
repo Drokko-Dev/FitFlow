@@ -384,11 +384,10 @@ Colores disponibles: `#7c6aff` (morado), `#22d3a0` (verde), `#f59e0b` (amarillo)
 
 ### Fuentes
 
-- **`font-display`** → `Syne` (títulos de sección, números grandes, labels de UI)
-- **`font-body`** → `DM Sans` (cuerpo de texto, subtítulos, botones)
-- **`font-heading`** → `Plus Jakarta Sans` (títulos principales de página: "Mis Planes", "Configuración", nombre de usuario en Profile)
+- **`font-display`** → `Bricolage Grotesque` (títulos de página: "Mis Planes", "Configuración", nombre de usuario en Profile, nombres de planes, headings principales)
+- **`font-body`** → `Outfit` (todo lo demás: cuerpo de texto, números, labels, botones, descripciones)
 
-Todas vienen de Google Fonts, cacheadas por el service worker con `CacheFirst`.
+Cargadas desde Google Fonts vía `<link>` en `index.html`, cacheadas por el service worker con `CacheFirst`.
 
 ### Animaciones Tailwind personalizadas
 

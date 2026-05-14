@@ -43,7 +43,7 @@ function Counter({ value, onDec, onInc }) {
       >
         −
       </button>
-      <span className="w-6 text-center font-display font-bold text-[#f0eeff] text-[14px]">
+      <span className="w-6 text-center font-body font-bold text-[#f0eeff] text-[14px]">
         {value}
       </span>
       <button
@@ -226,10 +226,10 @@ export default function PlanEditor({ planId, onClose }) {
               {existing && (
                 <button
                   onClick={() => setShowDelete(true)}
-                  className="w-8 h-8 flex items-center justify-center text-red-400 active:opacity-60 transition-opacity"
-                  aria-label="Eliminar plan"
+                  className="flex items-center gap-1.5 text-red-500 font-semibold text-sm active:opacity-60 transition-opacity"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={15} />
+                  <span>Eliminar</span>
                 </button>
               )}
               <button
@@ -338,10 +338,10 @@ export default function PlanEditor({ planId, onClose }) {
               {existing && (
                 <button
                   onClick={() => setShowDelete(true)}
-                  className="w-8 h-8 flex items-center justify-center text-red-400 active:opacity-60 transition-opacity"
-                  aria-label="Eliminar plan"
+                  className="flex items-center gap-1.5 text-red-500 font-semibold text-sm active:opacity-60 transition-opacity"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={15} />
+                  <span>Eliminar</span>
                 </button>
               )}
               <button
@@ -408,10 +408,10 @@ export default function PlanEditor({ planId, onClose }) {
               {existing && (
                 <button
                   onClick={() => setShowDelete(true)}
-                  className="w-8 h-8 flex items-center justify-center text-red-400 active:opacity-60 transition-opacity"
-                  aria-label="Eliminar plan"
+                  className="flex items-center gap-1.5 text-red-500 font-semibold text-sm active:opacity-60 transition-opacity"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={15} />
+                  <span>Eliminar</span>
                 </button>
               )}
               <button
@@ -467,7 +467,7 @@ export default function PlanEditor({ planId, onClose }) {
                 −
               </button>
               <div className="text-center flex-1">
-                <p className="font-display text-[32px] font-extrabold text-[#f0eeff] leading-none">
+                <p className="font-body text-[32px] font-extrabold text-[#f0eeff] leading-none">
                   {restBetweenSets}
                 </p>
                 <p className="text-[12px] text-muted mt-1">
@@ -489,8 +489,8 @@ export default function PlanEditor({ planId, onClose }) {
 
       {/* ── Modal confirmación de eliminación ── */}
       {showDelete && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm px-5 pb-8 animate-fade-in">
-          <div className="w-full max-w-[480px] bg-card rounded-[28px] border border-border p-6 flex flex-col gap-4 animate-slide-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="max-w-sm w-full bg-card rounded-[28px] border border-border p-6 flex flex-col gap-4 animate-slide-up">
             <div>
               <h2 className="font-display text-[18px] font-bold text-[#f0eeff]">
                 ¿Eliminar {existing?.name}?

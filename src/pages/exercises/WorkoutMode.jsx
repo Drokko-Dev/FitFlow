@@ -45,7 +45,7 @@ function RestCard({ seconds, totalSecs, onSkip }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display text-[20px] font-bold text-[#f0eeff] leading-none">
+          <span className="font-body text-[20px] font-bold text-[#f0eeff] leading-none">
             {seconds}
           </span>
           <span className="text-[9px] text-muted uppercase tracking-[0.08em]">

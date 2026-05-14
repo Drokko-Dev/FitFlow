@@ -50,7 +50,7 @@ function BMIBar({ bmi }) {
   return (
     <div>
       <div className="flex items-baseline gap-3 mb-4">
-        <span className="font-display text-[44px] font-bold text-[#f0eeff] leading-none">
+        <span className="font-body text-[44px] font-bold text-[#f0eeff] leading-none">
           {bmi.toFixed(1)}
         </span>
         <span className="text-[15px] font-semibold" style={{ color: info.color }}>
@@ -97,7 +97,7 @@ function PRCard({ pr, accentColor, onAddEntry }) {
       </div>
       <div className="flex items-end gap-3">
         <div className="flex-none flex items-baseline gap-1">
-          <span className="font-display text-[36px] font-bold text-[#f0eeff] leading-none">
+          <span className="font-body text-[36px] font-bold text-[#f0eeff] leading-none">
             {maxWeight}
           </span>
           <span className="text-[13px] text-muted">kg</span>
@@ -223,7 +223,7 @@ export default function Profile() {
           ) : (
             <button
               onClick={() => { setNameInput(userName); setEditingName(true) }}
-              className="font-heading text-[24px] font-bold tracking-normal text-[#f0eeff] active:opacity-70 transition-opacity"
+              className="font-display text-[24px] font-bold tracking-normal text-[#f0eeff] active:opacity-70 transition-opacity"
             >
               {userName} ›
             </button>
@@ -241,7 +241,7 @@ export default function Profile() {
             style={{ borderTopColor: color }}
           >
             <Icon size={26} color={color} strokeWidth={1.75} />
-            <div className="font-display text-[22px] font-bold text-[#f0eeff] leading-none">
+            <div className="font-body text-[22px] font-bold text-[#f0eeff] leading-none">
               {value}
               {unit && <span className="font-body text-[11px] font-normal text-muted ml-[2px]">{unit}</span>}
             </div>
