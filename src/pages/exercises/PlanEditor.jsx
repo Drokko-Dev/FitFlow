@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Info, Trash2 } from 'lucide-react'
+import { GripVertical, Info } from 'lucide-react'
 import { exercises } from '../../data/exercises'
 import { useApp } from '../../store/AppContext'
 import ExerciseDetailModal from '../../components/ExerciseDetailModal'
@@ -122,7 +122,7 @@ function SortableExerciseCard({ ex, onRemove, onChangeSets, onChangeReps }) {
 }
 
 export default function PlanEditor({ planId, onClose }) {
-  const { plans, addPlan, updatePlan, deletePlan } = useApp()
+  const { plans, addPlan, updatePlan } = useApp()
   const existing = planId ? plans.find(p => p.id === planId) : null
 
   const [step, setStep]             = useState(1)
@@ -130,8 +130,7 @@ export default function PlanEditor({ planId, onClose }) {
   const [search, setSearch]         = useState('')
   const [planExercises, setPlanEx]  = useState(existing?.exercises ?? [])
   const [restBetweenSets, setRest]  = useState(existing?.restBetweenSets ?? 90)
-  const [detailEx, setDetailEx]     = useState(null)
-  const [showDelete, setShowDelete] = useState(false)
+  const [detailEx, setDetailEx] = useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -204,11 +203,6 @@ export default function PlanEditor({ planId, onClose }) {
     onClose()
   }
 
-  function confirmDelete() {
-    deletePlan(existing.id)
-    onClose()
-  }
-
   const panel = 'absolute inset-0 overflow-y-auto no-scrollbar pb-[148px] transition-transform duration-[320ms] ease-in-out'
 
   return (
@@ -222,23 +216,12 @@ export default function PlanEditor({ planId, onClose }) {
             <h1 className="font-display text-[22px] font-bold text-[#f0eeff]">
               {existing ? 'Editar Plan' : 'Nuevo Plan'}
             </h1>
-            <div className="flex items-center gap-3">
-              {existing && (
-                <button
-                  onClick={() => setShowDelete(true)}
-                  className="flex items-center gap-1.5 text-red-500 font-semibold text-sm active:opacity-60 transition-opacity"
-                >
-                  <Trash2 size={15} />
-                  <span>Eliminar</span>
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
-              >
-                Cancelar
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
+            >
+              Cancelar
+            </button>
           </div>
           <StepDots step={step} />
         </header>
@@ -334,23 +317,12 @@ export default function PlanEditor({ planId, onClose }) {
             >
               ← Volver
             </button>
-            <div className="flex items-center gap-3">
-              {existing && (
-                <button
-                  onClick={() => setShowDelete(true)}
-                  className="flex items-center gap-1.5 text-red-500 font-semibold text-sm active:opacity-60 transition-opacity"
-                >
-                  <Trash2 size={15} />
-                  <span>Eliminar</span>
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
-              >
-                Cancelar
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
+            >
+              Cancelar
+            </button>
           </div>
           <StepDots step={step} />
         </header>
@@ -404,23 +376,12 @@ export default function PlanEditor({ planId, onClose }) {
             >
               ← Volver
             </button>
-            <div className="flex items-center gap-3">
-              {existing && (
-                <button
-                  onClick={() => setShowDelete(true)}
-                  className="flex items-center gap-1.5 text-red-500 font-semibold text-sm active:opacity-60 transition-opacity"
-                >
-                  <Trash2 size={15} />
-                  <span>Eliminar</span>
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
-              >
-                Cancelar
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="text-muted text-[14px] font-medium active:opacity-60 transition-opacity"
+            >
+              Cancelar
+            </button>
           </div>
           <StepDots step={step} />
         </header>
@@ -486,34 +447,6 @@ export default function PlanEditor({ planId, onClose }) {
           </div>
         </div>
       </div>
-
-      {/* ── Modal confirmación de eliminación ── */}
-      {showDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="max-w-sm w-full bg-card rounded-[28px] border border-border p-6 flex flex-col gap-4 animate-slide-up">
-            <div>
-              <h2 className="font-display text-[18px] font-bold text-[#f0eeff]">
-                ¿Eliminar {existing?.name}?
-              </h2>
-              <p className="text-[13px] text-muted mt-1">Esta acción no se puede deshacer</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDelete(false)}
-                className="flex-1 py-[13px] rounded-2xl bg-white/[0.06] border border-border text-[#f0eeff] font-semibold text-[14px] active:opacity-70 transition-opacity"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 py-[13px] rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-[14px] active:opacity-70 transition-opacity"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {detailEx && (
         <ExerciseDetailModal exercise={detailEx} onClose={() => setDetailEx(null)} />
