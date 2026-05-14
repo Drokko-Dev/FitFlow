@@ -5,7 +5,7 @@ import * as db from '../hooks/useSupabase'
 
 const AppContext = createContext(null)
 
-const DATA_VERSION = 4
+const DATA_VERSION = 5
 
 function applyAccent(hex) {
   const r = parseInt(hex.slice(1, 3), 16)
@@ -186,7 +186,7 @@ export function AppProvider({ children, userId }) {
 
   async function addSession(session) {
     const { exercises: sessionExercises, ...sessionData } = session
-    const localEntry = { ...sessionData, exercises: sessionExercises ?? [], createdAt: new Date().toISOString() }
+    const localEntry = { ...sessionData, exercises: sessionExercises ?? [], created_at: new Date().toISOString() }
     setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, localEntry] }))
     if (!userId) return
     try {

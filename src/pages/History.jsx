@@ -27,19 +27,22 @@ function formatDuration(min) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-function formatTime(isoStr) {
-  if (!isoStr) return null
-  try {
-    return new Date(isoStr).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })
-  } catch {
-    return null
-  }
+function formatTime(isoString) {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  return date.toLocaleTimeString(navigator.language || 'es-CL', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return dateStr
   try {
-    return new Date(dateStr).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Santiago' })
+    const [y, m, d] = dateStr.split('-')
+    return new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+      .toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
   } catch {
     return dateStr
   }
@@ -49,7 +52,7 @@ function SessionCard({ session, startExpanded }) {
   const [expanded, setExpanded] = useState(startExpanded)
   const exercises = session.exercises ?? []
   const muscles   = [...new Set(exercises.map(e => e.muscle).filter(Boolean))]
-  const time      = formatTime(session.createdAt)
+  const time      = formatTime(session.created_at)
 
   return (
     <div className="bg-white/[0.04] rounded-2xl border border-border/60 overflow-hidden">

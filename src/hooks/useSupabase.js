@@ -71,17 +71,18 @@ export async function fetchSessions(userId) {
     calorias:    s.calories,
     planName:    s.plan_name ?? null,
     exercises:   s.exercises ?? [],
-    createdAt:   s.created_at ?? null,
+    created_at:  s.created_at ?? null,
   }))
 }
 
 // Returns the new session's UUID so muscle_history can reference it
 export async function createSession(userId, session) {
+  const fechaLocal = new Date().toLocaleDateString('en-CA')
   const { data, error } = await supabase
     .from('sessions')
     .insert({
       user_id:      userId,
-      date:         session.fecha,
+      date:         fechaLocal,
       duration_min: session.duracionMin,
       calories:     session.calorias,
       plan_name:    session.planName ?? null,
