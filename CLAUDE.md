@@ -29,6 +29,7 @@ No hay suite de tests configurada.
 | Iconos | Lucide React | 1.14 |
 | Gráficas | Recharts | — |
 | Músculo SVG | react-muscle-highlighter | 1.2 |
+| Drag & drop | @dnd-kit/core + sortable + utilities | — |
 | PWA | vite-plugin-pwa + Workbox | — |
 
 ## Commits
@@ -55,6 +56,7 @@ src/
     AIMessage.jsx              # Tarjeta de sugerencia de IA (usa muscleScores)
     BodyMap.jsx                # Tarjeta flip 3D: SVG muscular ↔ barras de progreso
     BottomNav.jsx              # Nav fija inferior con 4 tabs (iconos Lucide, w-1/4 cada uno)
+    ExerciseDetailModal.jsx    # Modal de detalle de ejercicio (emoji + descripción + stats)
     WeekStats.jsx              # Estadísticas semanales (días 🔥, tiempo, kcal)
   pages/
     Login.jsx                  # Autenticación: tabs Login / Register con Supabase Auth
@@ -277,14 +279,18 @@ Cada ejercicio: `{ id, name, muscle, category, description, secPerRep, calPerRep
   - `aislamiento`: 60 s (metabólico)
   - `peso corporal`: 45 s (alta densidad)
   - `máquina`: 60 s (similar a aislamiento)
+- **`secPerRep`** — duración de una repetición (fase concéntrica + excéntrica, ~2 s + 2 s):
+  - `fuerza`: 5 s · `aislamiento`: 4 s · `peso corporal`: 4 s · `máquina`: 4 s
+  - Excepción: Plancha `secPerRep: 1` (isométrico — cada "rep" equivale a 1 s de hold, las reps = segundos totales)
 - **`variation`** — nombre del ejercicio base del que deriva (opcional). Ej.: `variation: 'Curl de Bíceps'`.
 
 ### Fórmulas de negocio
 
 ```
-// Tiempo estimado (incluye descanso entre series)
-tiempoSeg = (sets × reps × secPerRep) + ((sets - 1) × restSec)
+// Tiempo estimado (incluye descanso entre series + descanso entre ejercicios)
+tiempoSeg = Σ[(sets × reps × secPerRep) + ((sets - 1) × restSec)]  +  90 × (numEjercicios - 1)
 tiempoMin = tiempoSeg / 60
+//           └─ por ejercicio ──────────────────────────────────────┘  └─ transiciones ────────┘
 
 // Usado en: PlanEditor (tiempo en vivo paso 2), PlanList (duración en card)
 // WorkoutMode usa elapsed (cronómetro real), no esta fórmula
@@ -378,10 +384,11 @@ Colores disponibles: `#7c6aff` (morado), `#22d3a0` (verde), `#f59e0b` (amarillo)
 
 ### Fuentes
 
-- **`font-display`** → `Syne` (títulos, números grandes, labels de UI)
+- **`font-display`** → `Syne` (títulos de sección, números grandes, labels de UI)
 - **`font-body`** → `DM Sans` (cuerpo de texto, subtítulos, botones)
+- **`font-heading`** → `Plus Jakarta Sans` (títulos principales de página: "Mis Planes", "Configuración", nombre de usuario en Profile)
 
-Ambas vienen de Google Fonts, cacheadas por el service worker con `CacheFirst`.
+Todas vienen de Google Fonts, cacheadas por el service worker con `CacheFirst`.
 
 ### Animaciones Tailwind personalizadas
 
@@ -428,12 +435,21 @@ Lista de planes. Cada card es un `<div role="button">` (no `<button>` para evita
 ### `WorkoutMode`
 Cronómetro automático. Por cada ejercicio: N círculos (uno por serie) marcados con ✓ y `animate-check-pop`. Al completar todos aparece modal 🏆 con tiempo y kcal. "Guardar sesión" llama a `addSession` (async) que crea sesión en Supabase, inserta `muscle_history` y recalcula scores.
 
+**Descanso entre ejercicios (90 s fijo, meta-análisis Schoenfeld):**
+- Mini card estática `⏱ 90 seg de descanso` visible entre cada par de ejercicios (siempre).
+- Al completar todas las series de un ejercicio (excepto el último): la mini card se reemplaza por `RestCard` con countdown de 90 s, círculo SVG de progreso animado (`strokeDasharray`) y botón "Saltar descanso →".
+- Al llegar a 0: `navigator.vibrate([200])` + scroll automático al siguiente ejercicio.
+- Desmarcar una serie cancela el countdown activo de ese ejercicio.
+- Estado: `interRest { active, afterIndex, seconds }`. Countdown corre en `useEffect` solo cuando `active === true`.
+- Botón ⓘ en cada ejercicio abre `ExerciseDetailModal`.
+
 ### `PlanEditor`
 Flujo de **2 pasos** con animación slide horizontal:
-- **Paso 1** — nombre del plan + catálogo filtrable, agrupado por músculo; toggle de ejercicios.
-- **Paso 2** — ejercicios seleccionados con controles −/+ de series y reps; tiempo estimado en tiempo real.
+- **Paso 1** — nombre del plan + catálogo filtrable, agrupado por músculo; toggle de ejercicios. Items del catálogo son `<div role="button">` (no `<button>`) para poder anidar el botón ⓘ de detalle con `e.stopPropagation()`.
+- **Paso 2** — ejercicios seleccionados con controles −/+ de series y reps; tiempo estimado en tiempo real. **Drag & drop** con `@dnd-kit`: handle `GripVertical` en cada card → `useSortable` → `arrayMove`. Sensores: `PointerSensor` + `TouchSensor` (delay 150 ms para no conflictar con scroll en móvil).
 - Botón fijo inferior único que cambia según el paso.
-- ✕ en paso 2 elimina el ejercicio de la selección.
+- ✕ en paso 2 elimina el ejercicio de la selección (y regresa a paso 1).
+- Botón ⓘ abre `ExerciseDetailModal` desde el catálogo (paso 1).
 
 ### `Profile`
 - **Header**: avatar emoji (click → modal 12 emojis), nombre editable inline.
@@ -446,6 +462,13 @@ Flujo de **2 pasos** con animación slide horizontal:
 - **Preferencias**: toggle modo oscuro/claro, toggle recordatorios, 4 círculos de color de acento.
 - **Objetivos**: días/semana (3–6), objetivo fitness (4 opciones).
 - **Cuenta**: "Exportar datos" → toast "Próximamente"; "Versión: FitFlow v1.0.0"; botón Logout (rojo) → modal de confirmación → `logout()`.
+
+### `ExerciseDetailModal`
+Modal centrado (`items-center justify-center`, `max-h-[80vh]`) con overlay `bg-black/60 backdrop-blur-sm`. Muestra:
+- Emoji grande (5 rem) sobre fondo `bg-gradient-to-br` según músculo (pecho→azul, espalda→naranja, brazos→morado, hombros→verde, pierna→rojo, core→amarillo).
+- Badges de músculo (acento) y categoría (muted).
+- Descripción del ejercicio, stat cards de `restSec` y `secPerRep`, tag de variación si aplica.
+- Sin dependencia de API externa. Si en el futuro se quieren imágenes reales, añadir campo `imageUrl` en `exercises.js` apuntando a `/public/exercises/`.
 
 ### `Login`
 - Pantalla full-screen con fondo oscuro, logo "FitFlow" en gradiente, tagline.
