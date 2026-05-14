@@ -30,9 +30,18 @@ function formatDuration(min) {
 function formatTime(isoStr) {
   if (!isoStr) return null
   try {
-    return new Date(isoStr).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+    return new Date(isoStr).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' })
   } catch {
     return null
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return dateStr
+  try {
+    return new Date(dateStr).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Santiago' })
+  } catch {
+    return dateStr
   }
 }
 
@@ -270,8 +279,8 @@ export default function History() {
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-display text-[15px] font-semibold text-[#f0eeff]">
-                  {selectedDate}
+                <p className="font-display text-[15px] font-semibold text-[#f0eeff] capitalize">
+                  {formatDate(selectedDate)}
                 </p>
                 {daySessions.length > 1 && (
                   <p className="text-[12px] text-muted mt-[2px]">{daySessions.length} sesiones</p>
