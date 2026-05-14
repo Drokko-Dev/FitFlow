@@ -61,9 +61,9 @@ export async function deletePlan(id) {
 export async function fetchSessions(userId) {
   const { data, error } = await supabase
     .from('sessions')
-    .select('date, duration_min, calories, plan_name, exercises')
+    .select('date, duration_min, calories, plan_name, exercises, created_at')
     .eq('user_id', userId)
-    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
   if (error) throw error
   return (data ?? []).map(s => ({
     fecha:       s.date,
@@ -71,6 +71,7 @@ export async function fetchSessions(userId) {
     calorias:    s.calories,
     planName:    s.plan_name ?? null,
     exercises:   s.exercises ?? [],
+    createdAt:   s.created_at ?? null,
   }))
 }
 

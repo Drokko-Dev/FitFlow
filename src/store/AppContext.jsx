@@ -186,7 +186,7 @@ export function AppProvider({ children, userId }) {
 
   async function addSession(session) {
     const { exercises: sessionExercises, ...sessionData } = session
-    const localEntry = { ...sessionData, exercises: sessionExercises ?? [] }
+    const localEntry = { ...sessionData, exercises: sessionExercises ?? [], createdAt: new Date().toISOString() }
     setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, localEntry] }))
     if (!userId) return
     try {
