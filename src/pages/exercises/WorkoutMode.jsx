@@ -232,10 +232,17 @@ export default function WorkoutMode({ planId, onClose }) {
                 </div>
               </div>
 
-              {showRest && (
-                <div ref={restCardRef}>
-                  <RestCard seconds={interRest.seconds} onSkip={skipRest} />
-                </div>
+              {exIdx < plan.exercises.length - 1 && (
+                showRest ? (
+                  <div ref={restCardRef}>
+                    <RestCard seconds={interRest.seconds} onSkip={skipRest} />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-[6px] py-2 px-4 rounded-xl border border-dashed border-border/50 opacity-50">
+                    <span className="text-[13px] leading-none">⏱</span>
+                    <span className="text-[12px] text-muted">90 seg de descanso</span>
+                  </div>
+                )
               )}
             </Fragment>
           )
