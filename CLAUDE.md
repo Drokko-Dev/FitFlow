@@ -55,7 +55,7 @@ src/
   components/
     AIMessage.jsx              # Tarjeta de sugerencia de IA (usa muscleScores)
     BodyMap.jsx                # Tarjeta flip 3D: SVG muscular ↔ barras de progreso
-    BottomNav.jsx              # Nav fija inferior con 4 tabs (iconos Lucide, w-1/4 cada uno)
+    BottomNav.jsx              # Nav fija inferior con 5 tabs (iconos Lucide, w-1/5 cada uno)
     ExerciseDetailModal.jsx    # Modal de detalle de ejercicio (emoji + descripción + stats)
     WeekStats.jsx              # Estadísticas semanales (días 🔥, tiempo, kcal)
   pages/
@@ -63,11 +63,12 @@ src/
     Home.jsx                   # Pantalla principal (saludo, AIMessage, WeekStats, BodyMap)
     Profile.jsx                # Perfil: avatar, stats, Mis datos, IMC, Récords personales (PRs)
     Settings.jsx               # Configuración: preferencias, objetivos, cuenta, logout
+    History.jsx                # Historial: calendario mensual + detalle de sesiones por día
     Exercises.jsx              # Controlador de vistas (estado local: list/workout/editor)
     exercises/
-      PlanList.jsx             # Vista 1 — lista de planes
+      PlanList.jsx             # Vista 1 — lista de planes con menú 3 puntos (editar/eliminar)
       WorkoutMode.jsx          # Vista 2 — entrenamiento con cronómetro y series
-      PlanEditor.jsx           # Vista 3 — editor de plan en 2 pasos (slide)
+      PlanEditor.jsx           # Vista 3 — editor de plan en 3 pasos (slide)
 ```
 
 ## Autenticación
@@ -115,11 +116,13 @@ plans
 sessions
   id           uuid  PK default gen_random_uuid()
   user_id      uuid  references auth.users
-  date         date  default current_date   -- YYYY-MM-DD
+  date         date  default current_date   -- YYYY-MM-DD (fecha local del dispositivo)
   duration_min integer
   calories     integer
   plan_name    text  nullable
-  created_at   timestamp default now()
+  exercises    jsonb nullable              -- [{name, sets, reps, muscle, icon}]
+  created_at   timestamptz default now()  -- UTC; IMPORTANTE: debe ser timestamptz, no timestamp
+  plan_id      uuid  nullable references plans(id)
 
 -- Récords personales
 personal_records
@@ -138,6 +141,13 @@ muscle_history
   sets        integer
   date        date  default current_date
 ```
+
+> **IMPORTANTE — tabla `sessions`:**
+> - `created_at` es `timestamptz` con `DEFAULT now()` (crítico: sin el default queda NULL y rompe el historial).
+>   Si se migra o altera la columna, siempre verificar que tenga `SET DEFAULT now()`.
+> - `date` se guarda desde el cliente con `new Date().toLocaleDateString('en-CA')` (formato `YYYY-MM-DD` local, no UTC).
+> - La hora de visualización se formatea con `toLocaleTimeString(navigator.language, { hour12: true })`.
+> - `plan_id` es nullable; se envía desde `WorkoutMode` via `addSession({ planId: plan.id })`.
 
 ### Mapeo local ↔ DB (profiles)
 
@@ -163,7 +173,7 @@ Usar siempre `toProfileRow()` / `fromProfileRow()` en AppContext para convertir 
 - `updateProfile(uid, row)` — upsert de profiles
 - `fetchPlans(uid)` — array de planes
 - `createPlan(uid, plan)` / `updatePlan(id, updated)` / `deletePlan(id)`
-- `fetchSessions(uid)` — array de sesiones (mapea date→fecha, duration_min→duracionMin, calories→calorias)
+- `fetchSessions(uid)` — array de sesiones ordenadas por `created_at DESC`; mapea date→fecha, duration_min→duracionMin, calories→calorias, plan_name→planName, exercises→exercises, created_at→created_at
 - `createSession(uid, session)` → devuelve UUID de la sesión creada
 - `insertMuscleHistory(uid, sessionId, exercises, date)` — agrupa por `ex.muscle`, suma series, inserta una fila por grupo muscular
 - `calculateMuscleScores(uid)` — últimos 14 días, devuelve `{ pecho, espalda, brazos, hombros, pierna, core }`
@@ -182,7 +192,7 @@ Usar siempre `toProfileRow()` / `fromProfileRow()` en AppContext para convertir 
 
 Único store de la app. Persiste en `localStorage` bajo la clave `fitflow_state` (caché offline). La fuente de verdad es Supabase cuando hay sesión activa.
 
-**Guardia de versión**: `DATA_VERSION = 4`. Si no coincide con localStorage, se resetea a `defaultState`.
+**Guardia de versión**: `DATA_VERSION = 5`. Si no coincide con localStorage, se resetea a `defaultState`.
 
 ### Props
 
@@ -205,7 +215,7 @@ deletePlan(id)          // elimina plan por id
 muscleScores    // { pecho, espalda, brazos, hombros, pierna, core }
 
 // Historial de sesiones
-weekHistory     // { fecha: 'YYYY-MM-DD', duracionMin, calorias, planName? }[]
+weekHistory     // { fecha, duracionMin, calorias, planName?, exercises: ExerciseEntry[], created_at: ISO string }[]
 
 // Preferencias
 preferences     // { reminders: boolean }
@@ -236,8 +246,9 @@ dataLoading     // boolean — true mientras carga datos de Supabase al iniciar
 
 ```js
 {
-  id: string,         // UUID generado con crypto.randomUUID()
+  id: string,              // UUID generado con crypto.randomUUID()
   name: string,
+  restBetweenSets: number, // segundos de descanso entre ejercicios (default 90)
   exercises: [
     {
       id, name, muscle, category,
@@ -414,7 +425,7 @@ Cargadas desde Google Fonts vía `<link>` en `index.html`, cacheadas por el serv
 ## Componentes principales
 
 ### `BottomNav`
-Nav fija `bottom-0`, limitada a 480 px. 4 tabs con iconos Lucide (`Home`, `Dumbbell`, `User`, `Settings`): Inicio, Ejercicios, Perfil, Ajustes. Cada tab ocupa `w-1/4`. Usa CSS variables para responder al tema (`bg-[var(--color-card)]`, `shadow-[0_-1px_0_var(--color-border)]`).
+Nav fija `bottom-0`, limitada a 480 px. 5 tabs con iconos Lucide (`Home`, `Dumbbell`, `CalendarDays`, `User`, `Settings`): Inicio, Ejercicios, Historial, Perfil, Ajustes. Cada tab ocupa `w-1/5`. Usa CSS variables para responder al tema (`bg-[var(--color-card)]`, `shadow-[0_-1px_0_var(--color-border)]`).
 
 ### `BodyMap`
 Tarjeta con efecto flip 3D CSS. **Cara frontal**: dos SVGs del cuerpo (frente y espalda) coloreados según `muscleScores`, con `defaultFill`/`border` adaptados al tema actual (`data-theme` leído en cada render). **Cara trasera**: barras de progreso por músculo con animación al entrar. Botón ↻ en cada cara para voltear.
@@ -429,25 +440,24 @@ Lee `muscleScores`, encuentra el músculo con menor score > 0 y muestra un mensa
 Estado local `view` (`'list' | 'workout' | 'editor'`) y `planId`. Renderiza una de las tres vistas sin React Router adicional.
 
 ### `PlanList`
-Lista de planes. Cada card es un `<div role="button">` (no `<button>` para evitar anidamiento). Muestra nombre, nº de ejercicios, duración estimada y chips de los primeros 3 ejercicios. Botón ✏️ interno con `e.stopPropagation()`.
+Lista de planes. Cada card es un `<div role="button">` (no `<button>` para evitar anidamiento). Muestra nombre, nº de ejercicios, duración estimada y chips de los primeros 3 ejercicios. Botón `MoreVertical` (3 puntos) abre un dropdown con opciones Editar y Eliminar (con modal de confirmación). El dropdown se cierra al tocar fuera mediante `window.addEventListener('click', close)` con `setTimeout(0)` para evitar capturar el mismo click de apertura.
 
 ### `WorkoutMode`
 Cronómetro automático. Por cada ejercicio: N círculos (uno por serie) marcados con ✓ y `animate-check-pop`. Al completar todos aparece modal 🏆 con tiempo y kcal. "Guardar sesión" llama a `addSession` (async) que crea sesión en Supabase, inserta `muscle_history` y recalcula scores.
 
-**Descanso entre ejercicios (90 s fijo, meta-análisis Schoenfeld):**
-- Mini card estática `⏱ 90 seg de descanso` visible entre cada par de ejercicios (siempre).
-- Al completar todas las series de un ejercicio (excepto el último): la mini card se reemplaza por `RestCard` con countdown de 90 s, círculo SVG de progreso animado (`strokeDasharray`) y botón "Saltar descanso →".
+**Descanso entre ejercicios (`plan.restBetweenSets`, default 90 s):**
+- Mini card estática `⏱ N seg de descanso` visible entre cada par de ejercicios (siempre).
+- Al completar todas las series de un ejercicio (excepto el último): la mini card se reemplaza por `RestCard` con countdown, círculo SVG de progreso animado (`strokeDasharray`) y botón "Saltar descanso →".
 - Al llegar a 0: `navigator.vibrate([200])` + scroll automático al siguiente ejercicio.
 - Desmarcar una serie cancela el countdown activo de ese ejercicio.
 - Estado: `interRest { active, afterIndex, seconds }`. Countdown corre en `useEffect` solo cuando `active === true`.
 - Botón ⓘ en cada ejercicio abre `ExerciseDetailModal`.
 
 ### `PlanEditor`
-Flujo de **2 pasos** con animación slide horizontal:
+Flujo de **3 pasos** con animación slide horizontal. Indicadores `StepDots` (● ● ●) en cada header.
 - **Paso 1** — nombre del plan + catálogo filtrable, agrupado por músculo; toggle de ejercicios. Items del catálogo son `<div role="button">` (no `<button>`) para poder anidar el botón ⓘ de detalle con `e.stopPropagation()`.
-- **Paso 2** — ejercicios seleccionados con controles −/+ de series y reps; tiempo estimado en tiempo real. **Drag & drop** con `@dnd-kit`: handle `GripVertical` en cada card → `useSortable` → `arrayMove`. Sensores: `PointerSensor` + `TouchSensor` (delay 150 ms para no conflictar con scroll en móvil).
-- Botón fijo inferior único que cambia según el paso.
-- ✕ en paso 2 elimina el ejercicio de la selección (y regresa a paso 1).
+- **Paso 2** — ejercicios seleccionados con controles −/+ de series y reps; tiempo estimado en tiempo real. **Drag & drop** con `@dnd-kit`: handle `GripVertical` en cada card → `useSortable` → `arrayMove`. Sensores: `PointerSensor` + `TouchSensor` (delay 150 ms para no conflictar con scroll en móvil). ✕ elimina el ejercicio y vuelve a paso 1.
+- **Paso 3** — configurar descanso entre series: 3 presets (`REST_PRESETS`: Resistencia 45 s, Hipertrofia 90 s, Fuerza 120 s) + control manual ±15 s (rango 30–300 s). Guarda `restBetweenSets` en el plan. Botón "Guardar Plan" solo en este paso.
 - Botón ⓘ abre `ExerciseDetailModal` desde el catálogo (paso 1).
 
 ### `Profile`
@@ -468,6 +478,16 @@ Modal centrado (`items-center justify-center`, `max-h-[80vh]`) con overlay `bg-b
 - Badges de músculo (acento) y categoría (muted).
 - Descripción del ejercicio, stat cards de `restSec` y `secPerRep`, tag de variación si aplica.
 - Sin dependencia de API externa. Si en el futuro se quieren imágenes reales, añadir campo `imageUrl` en `exercises.js` apuntando a `/public/exercises/`.
+
+### `History`
+Calendario mensual con navegación `<` Mes Año `>`.
+- **Grid**: lunes–domingo (`(getDay() + 6) % 7`). Días de meses adyacentes a `opacity-25`.
+- **Círculos de día**: accent relleno si hay sesión + seleccionado, accent/20 + borde si hay sesión, borde accent/50 si es hoy, muted si vacío. Días con más de una sesión muestran un punto accent pequeño (posición `absolute` dentro del botón para no romper el grid).
+- **Panel de sesiones**: slide-up al tocar un día con sesiones. Lista de `SessionCard` apiladas (una por sesión). Cada card muestra nombre del plan + hora a la derecha, stats en línea (min · kcal · N ejercicios), y se expande/colapsa independientemente mostrando lista de ejercicios + badges de músculo por color.
+  - Con 1 sesión → arranca expandida. Con varias → colapsadas.
+  - `startExpanded` se pasa como prop; el estado interno de cada card es local.
+- **Resumen del mes**: 4 stat cards (días entrenados, tiempo total, kcal, racha actual).
+- **Zona horaria**: `created_at` se guarda como `timestamptz` en Supabase. Fecha local con `new Date().toLocaleDateString('en-CA')`. Hora con `toLocaleTimeString(navigator.language, { hour12: true })`. Fecha de modal construida con `new Date(y, m-1, d)` para evitar desfase UTC.
 
 ### `Login`
 - Pantalla full-screen con fondo oscuro, logo "FitFlow" en gradiente, tagline.
