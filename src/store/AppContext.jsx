@@ -193,7 +193,7 @@ export function AppProvider({ children, userId }) {
       exercises:   session.exercises ?? [],
       created_at:  new Date().toISOString(),
     }
-    setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, localEntry] }))
+    setState(prev => ({ ...prev, weekHistory: [localEntry, ...prev.weekHistory] }))
     if (!userId) return
     try {
       const dbSession = {
