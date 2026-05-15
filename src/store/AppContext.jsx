@@ -185,18 +185,32 @@ export function AppProvider({ children, userId }) {
   // ─── Session mutations ────────────────────────────────────────────────────
 
   async function addSession(session) {
-    const { exercises: sessionExercises, ...sessionData } = session
-    const localEntry = { ...sessionData, exercises: sessionExercises ?? [], created_at: new Date().toISOString() }
+    const localEntry = {
+      fecha:       session.fecha,
+      duracionMin: session.duracionMin,
+      calorias:    session.calorias,
+      planName:    session.planName ?? null,
+      exercises:   session.exercises ?? [],
+      created_at:  new Date().toISOString(),
+    }
     setState(prev => ({ ...prev, weekHistory: [...prev.weekHistory, localEntry] }))
     if (!userId) return
     try {
-      const sessionId = await db.createSession(userId, { ...sessionData, exercises: sessionExercises })
-      if (sessionExercises?.length && sessionId) {
-        await db.insertMuscleHistory(userId, sessionId, sessionExercises, sessionData.fecha)
+      const dbSession = {
+        duration_min: session.duracionMin,
+        calories:     session.calorias,
+        plan_name:    session.planName ?? null,
+        plan_id:      session.planId ?? null,
+        exercises:    session.exercises ?? null,
+      }
+      const sessionId = await db.createSession(userId, dbSession)
+      if (session.exercises?.length && sessionId) {
+        await db.insertMuscleHistory(userId, sessionId, session.exercises, session.fecha)
       }
       const newScores = await db.calculateMuscleScores(userId)
       setState(prev => ({ ...prev, muscleScores: newScores }))
-    } catch {
+    } catch (err) {
+      console.error('Error al guardar la sesión:', err)
       showError('Error al guardar la sesión')
     }
   }

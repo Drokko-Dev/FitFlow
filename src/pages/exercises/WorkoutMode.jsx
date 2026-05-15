@@ -202,11 +202,12 @@ export default function WorkoutMode({ planId, onClose }) {
 
   function saveSession() {
     addSession({
-      fecha: todayStr(),
+      fecha:       todayStr(),
       duracionMin: Math.max(1, Math.round(elapsed / 60)),
-      calorias: totalCalories,
-      planName: plan.name,
-      exercises: plan.exercises,
+      calorias:    totalCalories,
+      planName:    plan.name,
+      planId:      plan.id,
+      exercises:   plan.exercises,
     });
     onClose();
   }

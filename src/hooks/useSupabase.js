@@ -76,20 +76,24 @@ export async function fetchSessions(userId) {
 }
 
 // Returns the new session's UUID so muscle_history can reference it
+// session must have English snake_case keys: duration_min, calories, plan_name, plan_id, exercises
 export async function createSession(userId, session) {
   const fechaLocal = new Date().toLocaleDateString('en-CA')
+  console.log('Guardando sesión:', { userId, fechaLocal, session })
   const { data, error } = await supabase
     .from('sessions')
     .insert({
       user_id:      userId,
       date:         fechaLocal,
-      duration_min: session.duracionMin,
-      calories:     session.calorias,
-      plan_name:    session.planName ?? null,
+      duration_min: session.duration_min,
+      calories:     session.calories,
+      plan_name:    session.plan_name ?? null,
+      plan_id:      session.plan_id ?? null,
       exercises:    session.exercises ?? null,
     })
     .select('id')
     .single()
+  console.log('Resultado createSession:', data, 'Error:', error)
   if (error) throw error
   return data.id
 }
